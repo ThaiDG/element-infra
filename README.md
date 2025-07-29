@@ -68,3 +68,7 @@ If you don't want to specific the OS for every make command then follow the belo
 - ZeroSSL External Account Binding (EAB) - Using for coTURN SSL:
   - /zerossl/eab_kid
   - /zerossl/eab_hmac_key
+
+## Additional Note
+
+- Change in scripts folder which will only being executed at the initial stage of the instance therefore we must to run the refresh command: `aws autoscaling start-instance-refresh --auto-scaling-group-name change-affected-asg --region ap-southeast-1` to apply the change after running the Terraform apply command.
