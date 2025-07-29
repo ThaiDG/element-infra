@@ -4,6 +4,8 @@
 
 Open PowerShell and run:
 
+### Direct run
+
 ```powershell
 .\terraform-deploy.ps1 -Action init
 .\terraform-deploy.ps1 -Action plan
@@ -11,9 +13,33 @@ Open PowerShell and run:
 .\terraform-deploy.ps1 -Action destroy
 ```
 
-By default, it runs in the current directory (`"."`). You can pass `-TerraformDir "infra"` or any folder that holds your `.tf` files.
+### Run with make command
 
-## Resources must create manual
+```shell
+make init
+make plan
+make apply AUTOAPPROVE
+make destroy AUTOAPPROVE
+```
+
+#### Window user note
+
+If you don't want to specific the OS for every make command then follow the below steps:
+
+- Run the command: `$PROFILE` to get the current shell profile
+
+- Open the profile and add the below content:
+
+    ```powershell
+    $env:OS = "windows"
+    Write-Host "Default OS set to $env:OS"
+    ```
+
+- Save file and reload the terminal.
+
+- Otherwise you can run make file by: `make init OS=windows`
+
+## Resources must be created manually
 
 ### SSM Parameter Store
 

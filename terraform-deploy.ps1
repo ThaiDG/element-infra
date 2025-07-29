@@ -2,15 +2,10 @@ param (
     [ValidateSet("init", "plan", "apply", "destroy")]
     [string]$Action = "apply",
 
-    [string]$TerraformDir = ".",
-
     [switch]$AutoApprove
 )
 
-# Navigate to Terraform directory
-Set-Location $TerraformDir
-
-Write-Host "Running Terraform '$Action' in directory: $TerraformDir" -ForegroundColor Cyan
+Write-Host "Running Terraform '$Action'" -ForegroundColor Cyan
 
 # Run Terraform action
 switch ($Action) {

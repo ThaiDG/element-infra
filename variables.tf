@@ -13,11 +13,6 @@ variable "pub2" {
   type        = string
 }
 
-variable "allow_all_sg_id" {
-  description = "Security Group ID that allows all access"
-  type        = string
-}
-
 variable "root_domain" {
   description = "Root domain for the application"
   type        = string
