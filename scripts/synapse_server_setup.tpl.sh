@@ -1,0 +1,365 @@
+#!/bin/bash
+set -e
+
+# Interpolating by Terraform template_file data
+SYNAPSE_DNS="${synapse_dns}"
+COTURN_TCP_DNS="${coturn_tcp_dns}"
+COTURN_UDP_DNS="${coturn_udp_dns}"
+ELEMENT_DNS="${element_dns}"
+SYGNAL_DNS="${sygnal_dns}"
+AWS_ACCOUNT_ID="${aws_account_id}"
+AWS_REGION="${aws_region}"
+
+# Define constants
+APP_DIR="/app"
+POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
+
+# Update and upgrade the system
+apt-get update && apt-get upgrade -y
+
+# Set up UFW rules
+ufw allow 22/tcp
+ufw allow http
+ufw allow 8008
+ufw allow 8448
+# Enable UFW
+ufw --force enable
+
+# Install Docker
+apt-get install -y \
+  docker.io \
+  unzip \
+  curl
+
+# Install AWS CLI if not already installed
+if ! command -v aws >/dev/null 2>&1; then
+  echo "⚙️ AWS CLI not found — installing..."
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  unzip awscliv2.zip
+  ./aws/install
+else
+  echo "✅ AWS CLI is already installed!"
+fi
+
+# Start and enable Docker
+systemctl start docker
+systemctl enable docker
+
+# Install the docker compose verison 2
+# Define version - fetch latest dynamically
+COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep tag_name | cut -d '"' -f4)
+    
+# Define plugin path
+DOCKER_CONFIG=/root/.docker
+PLUGIN_DIR="$DOCKER_CONFIG/cli-plugins"
+
+# Create plugin directory
+mkdir -p "$PLUGIN_DIR"
+
+# Download Compose v2 binary
+echo "Downloading Docker Compose v2..."
+curl -SL "https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-linux-x86_64" -o "$PLUGIN_DIR/docker-compose"
+
+# Make it executable
+chmod +x "$PLUGIN_DIR/docker-compose"
+
+# Verify installation
+echo "Verifying Docker Compose installation..."
+docker compose version
+
+# Logging in to ECR
+echo "Logging in to ECR..."
+aws ecr get-login-password --region $AWS_REGION | \
+docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Fetching credentials from SSM
+echo "🔐 Fetching credentials from SSM..."
+SMTP_USER=$(aws ssm get-parameter \
+  --name "/smtp/user" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+SMTP_PASS=$(aws ssm get-parameter \
+  --name "/smtp/pass" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+POSTGRES_USER=$(aws ssm get-parameter \
+  --name "/synapse/postgres/user" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+POSTGRES_PASSWORD=$(aws ssm get-parameter \
+  --name "/synapse/postgres/password" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+SYNAPSE_DB=$(aws ssm get-parameter \
+  --name "/synapse/postgres/db" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+RECAPTCHA_PUBLIC_KEY=$(aws ssm get-parameter \
+  --name "/synapse/reCAPTCHA/public_key" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+RECAPTCHA_PRIVATE_KEY=$(aws ssm get-parameter \
+  --name "/synapse/reCAPTCHA/private_key" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+# Create app directory and switch to it
+mkdir -p "$APP_DIR"
+cd "$APP_DIR"
+
+# Create docker-compose.yaml
+cat <<'EOF' > docker-compose.yaml
+services:
+  synapse:
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:latest
+    restart: always
+    depends_on:
+      - postgres
+    volumes:
+      - ./synapse/data:/data
+      - ./synapse/config:/config
+    ports:
+      - "8008:8008"
+      - "8448:8448"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  postgres:
+    image: postgres:14
+    restart: always
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_USER=$${POSTGRES_USER}
+      - POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
+      - POSTGRES_DB=$${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${SYNAPSE_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+EOF
+
+# Create .env file
+cat <<EOF > .env
+POSTGRES_USER=$POSTGRES_USER
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+POSTGRES_DB=$POSTGRES_DB
+SYNAPSE_DB=$SYNAPSE_DB
+AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
+AWS_REGION=$AWS_REGION
+EOF
+
+# Create synapse and postgres folders
+mkdir -p synapse/{config,data}
+mkdir -p postgres/data
+touch postgres/init.sql
+
+# Create init SQL content
+cat <<EOF > postgres/init.sql
+CREATE DATABASE synapse
+ENCODING 'UTF8'
+LC_COLLATE='C'
+LC_CTYPE='C'
+TEMPLATE template0
+OWNER synapse;
+EOF
+
+# Generate synapse config (requires Docker)
+docker run --rm \
+  -v "$APP_DIR/synapse/data:/data" \
+  -v "$APP_DIR/synapse/config:/config" \
+  -e SYNAPSE_SERVER_NAME=$SYNAPSE_DNS \
+  -e SYNAPSE_REPORT_STATS=no \
+  matrixdotorg/synapse generate
+
+CONFIG_FILE="$APP_DIR/synapse/data/homeserver.yaml"
+
+# Extract secret values
+REGISTRATION_SECRET=$(grep 'registration_shared_secret:' "$CONFIG_FILE" | sed 's/.*registration_shared_secret:[[:space:]]*//')
+MACAROON_SECRET=$(grep 'macaroon_secret_key:' "$CONFIG_FILE" | sed 's/.*macaroon_secret_key:[[:space:]]*//')
+FORM_SECRET=$(grep 'form_secret:' "$CONFIG_FILE" | sed 's/.*form_secret:[[:space:]]*//')
+
+# Overwrite homeserver.yaml with complete config
+cat <<EOF > "$CONFIG_FILE"
+# Configuration file for Synapse.
+#
+# This is a YAML file: see [1] for a quick introduction. Note in particular
+# that *indentation is important*: all the elements of a list or dictionary
+# should have the same indentation.
+#
+# [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+#
+# For more information on how to configure Synapse, including a complete accounting of
+# each option, go to docs/usage/configuration/config_documentation.md or
+# https://element-hq.github.io/synapse/latest/usage/configuration/config_documentation.html
+server_name: "$SYNAPSE_DNS"
+pid_file: /data/homeserver.pid
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client]
+        compress: false
+  - port: 8448
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [federation]
+        compress: false
+database:
+  name: psycopg2
+  args:
+    user: $POSTGRES_USER
+    password: $POSTGRES_PASSWORD
+    database: $SYNAPSE_DB
+    host: postgres
+log_config: "/data/$SYNAPSE_DNS.log.config"
+registration_shared_secret: $REGISTRATION_SECRET
+media_store_path: /data/media_store
+report_stats: true
+macaroon_secret_key: $MACAROON_SECRET
+form_secret: $FORM_SECRET
+signing_key_path: "/data/$SYNAPSE_DNS.signing.key"
+trusted_key_servers:
+  - server_name: "matrix.org"
+suppress_key_server_warning: true
+
+# Custom configurations
+
+# Increase the maximum upload size
+max_upload_size: 100M
+
+# Enable TURN server
+turn_uris:
+  - "turn:$COTURN_UDP_DNS:3478?transport=udp"
+  - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
+  - "turns:$COTURN_TCP_DNS:5349?transport=tcp"
+turn_username: "admin"
+turn_password: "Admin123"
+turn_user_lifetime: 86400
+turn_allow_guests: true
+
+public_baseurl: "https://$SYNAPSE_DNS"
+default_identity_server: "https://vector.im"
+web_client_location: "https://$ELEMENT_DNS"
+
+# Push notifications to Sygnal
+push:
+  enabled: true
+  gateway_url: "https://$SYGNAL_DNS:5000/_matrix/push/v1/notify"
+
+# Registration settings
+enable_registration: true
+
+# Enable CAPTCHA verification
+enable_registration_captcha: true
+recaptcha_public_key: "$RECAPTCHA_PUBLIC_KEY"
+recaptcha_private_key: "$RECAPTCHA_PRIVATE_KEY"
+recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
+
+# Enable email verification
+disable_msisdn_registration: true
+# User required an email address to register and password reset
+registrations_require_3pid:
+  - email
+# Allows people to change their email address
+enable_3pid_changes: true
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_user: "$SMTP_USER"
+  smtp_pass: "$SMTP_PASS"
+  force_tls: false
+  require_transport_security: true
+  enable_tls: true
+  tlsname: smtp.gmail.com
+  app_name: "TAP Media Chat"
+  notif_from: "%(app)s <noreply@$SYNAPSE_DNS>"
+  enable_notifs: true
+  notif_for_new_users: false
+  subjects:
+    password_reset: '[%(app)s] Password reset'
+    email_validation: '[%(app)s] Validate your email'
+
+# Allows searching of all users in directory
+user_directory:
+  enabled: true
+  search_all_users: true
+  prefer_local_users: true
+  exclude_remote_users: false
+  show_locked_users: true
+
+# Enable Google OAuth
+# oidc_providers:
+#   - idp_id: google
+#     idp_name: Google
+#     idp_brand: "google"  # optional: styling hint for clients
+#     issuer: "https://accounts.google.com/"
+#     client_id: "<Google OAuth client ID>"
+#     client_secret: "<Google OAuth client secret>"
+#     scopes:
+#       - "openid"
+#       - "profile"
+#       - "email"
+#     allow_existing_users: true
+#     user_mapping_provider:
+#       config:
+#         localpart_template: "{{ user.given_name|lower }}"
+#         display_name_template: "{{ user.name }}"
+#         email_template: "{{ user.email }}" # needs "email" in scopes above
+
+# Enable features
+# experimental_features:
+#   msc3861:
+#     enabled: true
+#     issuer: "https://accounts.google.com"
+#     client_id: "<Google OAuth client ID>"
+#     client_auth_method: client_secret_basic
+#     client_secret: "<Google OAuth client secret>"
+#     admin_token: $REGISTRATION_SECRET
+
+
+# vim:ft=yaml
+EOF
+
+# Start services
+echo "Starting Synapse and Postgres services..."
+docker compose up --wait --force-recreate
+
+echo "Synapse server setup completed successfully."
