@@ -1,9 +1,11 @@
 terraform {
   backend "s3" {
-    bucket         = "767828741221-terraform-state-ap-southeast-1"
-    region         = "ap-southeast-1"
-    dynamodb_table = "terraform-lock-table"
-    encrypt        = true
+    bucket               = "767828741221-terraform-state-ap-southeast-1"
+    key                  = "terraform.tfstate"
+    workspace_key_prefix = "homeserver"
+    region               = "ap-southeast-1"
+    dynamodb_table       = "terraform-lock-table"
+    encrypt              = true
   }
 
   required_providers {

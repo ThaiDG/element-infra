@@ -11,9 +11,9 @@ Write-Host "Running Terraform '$Action'" -ForegroundColor Cyan
 switch ($Action) {
     "init" {
         terraform init `
-            -backend-config="key=demo/element/terraform.tfstate" `
             -backend=true `
-            -input=false
+            -input=false `
+            -reconfigure
     }
 
     "plan" {

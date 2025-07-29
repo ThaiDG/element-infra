@@ -2,27 +2,17 @@
 
 ## ✨ How to Use
 
-Open PowerShell and run:
-
-### Direct run
-
-```powershell
-.\terraform-deploy.ps1 -Action init
-.\terraform-deploy.ps1 -Action plan
-.\terraform-deploy.ps1 -Action apply -AutoApprove
-.\terraform-deploy.ps1 -Action destroy
-```
-
-### Run with make command
+Open PowerShell, change directory to `homeserver` and run:
 
 ```shell
-make init
-make plan
-make apply AUTOAPPROVE
-make destroy AUTOAPPROVE
+make init # The command below will always automatically run this command first, so, you don't need to manually run it.
+make select-workspace # Optional - This will also trigger the make init. You don't need to run this command manually.
+make plan ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
+make apply AUTOAPPROVE ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
+make destroy AUTOAPPROVE ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
 ```
 
-#### Window user note
+### Window user note
 
 If you don't want to specific the OS for every make command then follow the below steps:
 
