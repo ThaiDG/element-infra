@@ -13,9 +13,9 @@ endif
 
 init:
 ifeq ($(OS),windows)
-	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action init
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action init
 else
-	./terraform-deploy.sh -Action init
+	@./terraform-deploy.sh -Action init
 endif
 
 select-workspace: init
@@ -27,29 +27,29 @@ endif
 
 plan: select-workspace
 ifeq ($(OS),windows)
-	powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action plan
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action plan
 else
-	./terraform-deploy.sh -Action plan
+	@./terraform-deploy.sh -Action plan
 endif
 
 apply: select-workspace
 ifeq ($(OS),windows)
-	ifeq ($(origin AUTOAPPROVE), undefined)
-		powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action apply -AutoApprove
-	else
-		powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action apply
-	endif
+ifeq ($(origin AUTOAPPROVE), undefined)
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action apply
 else
-	./terraform-deploy.sh -Action apply
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action apply -AutoApprove
+endif
+else
+	@./terraform-deploy.sh -Action apply
 endif
 
 destroy: select-workspace
 ifeq ($(OS),windows)
-	ifeq ($(origin AUTOAPPROVE), undefined)
-		powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action destroy -AutoApprove
-	else
-		powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action destroy
-	endif
+ifeq ($(origin AUTOAPPROVE), undefined)
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action destroy
 else
-	./terraform-deploy.sh -Action destroy
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/terraform-deploy.ps1" -Action destroy -AutoApprove
+endif
+else
+	@./terraform-deploy.sh -Action destroy
 endif
