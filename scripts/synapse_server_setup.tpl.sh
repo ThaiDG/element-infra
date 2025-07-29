@@ -130,6 +130,30 @@ RECAPTCHA_PRIVATE_KEY=$(aws ssm get-parameter \
   --output text
 )
 
+LIVEKIT_URL=$(aws ssm get-parameter \
+  --name "/synapse/livekit/url" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+LIVEKIT_KEY=$(aws ssm get-parameter \
+  --name "/synapse/livekit/key" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+LIVEKIT_SECRET=$(aws ssm get-parameter \
+  --name "/synapse/livekit/secret" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
 # Create app directory and switch to it
 mkdir -p "$APP_DIR"
 cd "$APP_DIR"
@@ -139,6 +163,7 @@ cat <<'EOF' > docker-compose.yaml
 services:
   synapse:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:latest
+    container_name: synapse
     restart: always
     depends_on:
       - postgres
@@ -153,6 +178,37 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  jwt-auth:
+    image: ghcr.io/element-hq/lk-jwt-service:latest
+    container_name: jwt-auth
+    restart: always
+    ports:
+      - "8070:8080"
+    environment:
+      - LK_JWT_PORT=8080
+      - LIVEKIT_URL=$${LIVEKIT_URL}
+      - LIVEKIT_KEY=$${LIVEKIT_KEY}
+      - LIVEKIT_SECRET=$${LIVEKIT_SECRET}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - synapse
+      - jwt-auth
+
   postgres:
     image: postgres:14
     restart: always
@@ -180,6 +236,10 @@ POSTGRES_DB=$POSTGRES_DB
 SYNAPSE_DB=$SYNAPSE_DB
 AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
 AWS_REGION=$AWS_REGION
+LIVEKIT_URL=$LIVEKIT_URL
+LIVEKIT_KEY=$LIVEKIT_KEY
+LIVEKIT_SECRET=$LIVEKIT_SECRET
+SYNAPSE_DNS=$SYNAPSE_DNS
 EOF
 
 # Create synapse and postgres folders
@@ -189,12 +249,44 @@ touch postgres/init.sql
 
 # Create init SQL content
 cat <<EOF > postgres/init.sql
-CREATE DATABASE synapse
+CREATE DATABASE $SYNAPSE_DB
 ENCODING 'UTF8'
 LC_COLLATE='C'
 LC_CTYPE='C'
 TEMPLATE template0
-OWNER synapse;
+OWNER $POSTGRES_USER;
+EOF
+
+# Create nginx configuration
+cat <<EOF > nginx.conf
+worker_processes auto;
+events {
+    worker_connections 1024;
+}
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+    keepalive_timeout 65;
+    server {
+        listen 8008;
+        server_name $SYNAPSE_DNS;
+        location /_matrix/ {
+            proxy_pass http://synapse:8008;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+        }
+        location /livekit/jwt {
+            proxy_pass http://jwt-auth:8080;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+        }
+    }
+}
 EOF
 
 # Generate synapse config (requires Docker)
@@ -345,14 +437,34 @@ user_directory:
 #         email_template: "{{ user.email }}" # needs "email" in scopes above
 
 # Enable features
-# experimental_features:
-#   msc3861:
+experimental_features:
+#  msc3861:
 #     enabled: true
 #     issuer: "https://accounts.google.com"
 #     client_id: "<Google OAuth client ID>"
 #     client_auth_method: client_secret_basic
 #     client_secret: "<Google OAuth client secret>"
 #     admin_token: $REGISTRATION_SECRET
+
+# Enable LiveKit for Element Call
+  msc3266_enabled: true
+  msc4222_enabled: true
+  msc4140_enabled: true
+
+max_event_delay_duration: 24h
+rc_message:
+  per_second: 0.5
+  burst_count: 30
+rc_delayed_event_mgmt:
+  per_second: 1
+  burst_count: 20
+
+# Add well-known client content
+serve_server_wellknown: true
+extra_well_known_client_content:
+  org.matrix.msc4143.rtc_foci:
+    - type: "LiveKit"
+      livekit_service_url: "https://$SYNAPSE_DNS/livekit/jwt"
 
 
 # vim:ft=yaml
