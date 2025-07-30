@@ -5,15 +5,32 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_acm_certificate" "default" {
-  domain   = "*.demo.tapofthink.com"
+  domain   = "*.${var.root_domain}"
   statuses = ["ISSUED"]
 }
 
 data "aws_route53_zone" "main" {
-  name         = "demo.tapofthink.com"
+  name         = "${var.root_domain}"
   private_zone = false
 }
 
-data "aws_launch_template" "default" {
-  id = "lt-08edb0a634b69facc"
+# Ubuntu 24.04LTS AMI for the ap-southeast-1 region
+data "aws_ami" "ubuntu_2404" {
+  most_recent = true
+  owners = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-24.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
 }

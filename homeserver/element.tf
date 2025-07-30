@@ -11,11 +11,11 @@ data "template_file" "element_init" {
 
 module "element_lt" {
   source = "./modules/EC2/LaunchTemplate"
-  name_prefix   = "element-web-lt"
-  image_id      = data.aws_launch_template.default.image_id
+  name_prefix   = "${var.workspace}-element-web-lt"
+  image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
   user_data     = data.template_file.element_init.rendered
-  instance_name = "element-web"
+  instance_name = "${var.workspace}-element-web"
   volume_size   = 30
   security_group_ids = [
     module.element_sg.security_group_id,
@@ -59,13 +59,13 @@ module "element_alb" {
 
 module "element_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
-  asg_name              = "element-web-asg"
+  asg_name              = "${var.workspace}-element-web-asg"
   asg_desired_capacity  = 1
   asg_min_size          = 1
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.element_lt.launch_template_id
-  instance_name         = "element-web"
+  instance_name         = "${var.workspace}-element-web"
   asg_target_group_arns = [module.element_alb.target_group_arn]
   asg_health_check_type = "ELB"
 }

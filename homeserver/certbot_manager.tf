@@ -11,10 +11,10 @@ data "template_file" "certbot_init" {
 
 module "certbot_manager_lt" {
   source = "./modules/EC2/LaunchTemplate"
-  name_prefix   = "certbot-manager-lt"
-  image_id      = data.aws_launch_template.default.image_id
+  name_prefix   = "${var.workspace}-certbot-manager-lt"
+  image_id      = data.aws_ami.ubuntu_2404.id
   user_data     = data.template_file.certbot_init.rendered
-  instance_name = "certbot-manager"
+  instance_name = "${var.workspace}-certbot-manager"
   volume_size   = 8
   security_group_ids = [
     module.efs_sg.security_group_id,
@@ -28,13 +28,13 @@ module "certbot_manager_lt" {
 
 module "certbot_asg" {
   source               = "./modules/EC2/AutoScalingGroup"
-  asg_name             = "certbot-manager-asg"
+  asg_name             = "${var.workspace}-certbot-manager-asg"
   asg_desired_capacity = 1
   asg_min_size         = 1
   asg_max_size         = 1
   asg_subnet_ids       = [var.pub1]  # Ensure this matches the EFS subnet
   launch_template_id   = module.certbot_manager_lt.launch_template_id
-  instance_name        = "certbot-manager"
+  instance_name        = "${var.workspace}-certbot-manager"
 
   depends_on = [
     module.coturn_tcp_route53_record,

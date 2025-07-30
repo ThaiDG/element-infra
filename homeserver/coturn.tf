@@ -44,11 +44,11 @@ data "template_file" "coturn_udp_init" {
 
 module "coturn_tcp_lt" {
   source = "./modules/EC2/LaunchTemplate"
-  name_prefix   = "coturn-tcp-lt"
-  image_id      = data.aws_launch_template.default.image_id
+  name_prefix   = "${var.workspace}-coturn-tcp-lt"
+  image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
   user_data     = data.template_file.coturn_tcp_init.rendered
-  instance_name = "coturn-tcp"
+  instance_name = "${var.workspace}-coturn-tcp"
   volume_size   = 8
   security_group_ids = [
     module.coturn_sg.security_group_id,
@@ -62,11 +62,11 @@ module "coturn_tcp_lt" {
 
 module "coturn_udp_lt" {
   source = "./modules/EC2/LaunchTemplate"
-  name_prefix   = "coturn-udp-lt"
-  image_id      = data.aws_launch_template.default.image_id
+  name_prefix   = "${var.workspace}-coturn-udp-lt"
+  image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
   user_data     = data.template_file.coturn_udp_init.rendered
-  instance_name = "coturn-udp"
+  instance_name = "${var.workspace}-coturn-udp"
   volume_size   = 8
   security_group_ids = [
     module.coturn_sg.security_group_id,
@@ -124,26 +124,26 @@ module "coturn_nlb_3478_udp" {
 # Auto Scaling Groups for coTURN TCP instances
 module "coturn_tcp_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
-  asg_name              = "coturn-tcp-asg"
+  asg_name              = "${var.workspace}-coturn-tcp-asg"
   asg_desired_capacity  = 1
   asg_min_size          = 1
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.coturn_tcp_lt.launch_template_id
-  instance_name         = "coturn-tcp"
+  instance_name         = "${var.workspace}-coturn-tcp"
   asg_target_group_arns = [module.coturn_nlb_3478_tcp.target_group_arn, module.coturn_nlb_5349_tcp.target_group_arn]
   # asg_health_check_type = "ELB"
 }
 # Auto Scaling Groups for coTURN UDP instances
 module "coturn_udp_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
-  asg_name              = "coturn-udp-asg"
+  asg_name              = "${var.workspace}-coturn-udp-asg"
   asg_desired_capacity  = 1
   asg_min_size          = 1
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.coturn_udp_lt.launch_template_id
-  instance_name         = "coturn-udp"
+  instance_name         = "${var.workspace}-coturn-udp"
   asg_target_group_arns = [module.coturn_nlb_3478_udp.target_group_arn]
   asg_health_check_type = "ELB"
 }

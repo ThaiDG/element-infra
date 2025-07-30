@@ -37,7 +37,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain=$rootDomain
+        $env:TF_var_root_domain = $rootDomain
 
         terraform plan -var-file="terraform.tfvars"
     }
@@ -53,7 +53,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain=$rootDomain
+        $env:TF_var_root_domain = $rootDomain
 
         if ($AutoApprove) {
             terraform apply -auto-approve -var-file="terraform.tfvars"
@@ -73,7 +73,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain=$rootDomain
+        $env:TF_var_root_domain = $rootDomain
 
         if ($AutoApprove) {
             terraform destroy -auto-approve -var-file="terraform.tfvars"

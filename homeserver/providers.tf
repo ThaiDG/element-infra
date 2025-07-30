@@ -25,7 +25,7 @@ provider "aws" {
     tags = {
       Project = "element"
       Owner   = "ThaiDG"
-      Env     = "demo"
+      Env     = "${var.workspace}"
     }
   }
 }

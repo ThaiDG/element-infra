@@ -1,8 +1,8 @@
 # ---------------- SYNAPSE SECURITY GROUPS ----------------
 # Security groups for Synapse main and federation services
 module "synapse_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "synapse-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-synapse-security-group"
   security_group_description = "Security group for Synapse main services"
   vpc_id                     = var.vpc_id
 
@@ -32,8 +32,8 @@ module "synapse_sg" {
 
 # Security group for Synapse ALB
 module "synapse_alb_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "synapse-alb-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-synapse-alb-security-group"
   security_group_description = "Security group for Synapse ALB"
   vpc_id                     = var.vpc_id
 
@@ -68,8 +68,8 @@ module "synapse_alb_sg" {
 # ---------------- ELEMENT SECURITY GROUPS ----------------
 # Security groups for Element client
 module "element_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "element-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-element-security-group"
   security_group_description = "Security group for Element client"
   vpc_id                     = var.vpc_id
 
@@ -89,8 +89,8 @@ module "element_sg" {
 
 # Security group for Element ALB
 module "element_alb_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "element-alb-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-element-alb-security-group"
   security_group_description = "Security group for Element ALB"
   vpc_id                     = var.vpc_id
 
@@ -108,8 +108,8 @@ module "element_alb_sg" {
 # ---------------- COTURN SECURITY GROUPS ----------------
 # Security groups for Coturn services
 module "coturn_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "coturn-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-coturn-security-group"
   security_group_description = "Security group for Coturn services"
   vpc_id                     = var.vpc_id
 
@@ -179,8 +179,8 @@ module "coturn_sg" {
 
 # Security group for Coturn NLB
 module "coturn_nlb_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "coturn-nlb-tcp-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-coturn-nlb-tcp-security-group"
   security_group_description = "Security group for Coturn NLB TCP"
   vpc_id                     = var.vpc_id
 
@@ -238,8 +238,8 @@ module "coturn_nlb_sg" {
 
 # ---------------- SYGNAL SECURITY GROUPS ----------------
 module "sygnal_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "sygnal-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-sygnal-security-group"
   security_group_description = "Security group for Sygnal service"
   vpc_id                     = var.vpc_id
 
@@ -258,8 +258,8 @@ module "sygnal_sg" {
 }
 
 module "sygnal_alb_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "sygnal-alb-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-sygnal-alb-security-group"
   security_group_description = "Security group for Sygnal ALB"
   vpc_id                     = var.vpc_id
 
@@ -279,8 +279,8 @@ module "sygnal_alb_sg" {
 
 # ---------------- EFS SECURITY GROUP ----------------
 module "efs_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "efs-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-efs-security-group"
   security_group_description = "Allow NFS traffic for EFS"
   vpc_id                     = var.vpc_id
 
@@ -297,8 +297,8 @@ module "efs_sg" {
 
 # ---------------- SSH SECURITY GROUP ----------------
 module "ssh_sg" {
-  source = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "ssh-security-group"
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-ssh-security-group"
   security_group_description = "Security group for SSH access"
   vpc_id                     = var.vpc_id
 
