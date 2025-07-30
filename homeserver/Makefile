@@ -3,7 +3,7 @@
 # I will update the script to support Linux and MacOS when I can access to a Linux or MacOS environment.
 # This Makefile is designed to work with both Windows and Unix-like systems (Linux, MacOS).
 OS ?= windows
-# Default ENV would be demo if not specified
+# Default ENV would be dev if not specified
 
 ifeq ($(OS),windows)
 	SHELL := powershell.exe

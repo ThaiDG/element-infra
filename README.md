@@ -7,9 +7,9 @@ Open PowerShell, change directory to `homeserver` and run:
 ```shell
 make init # The command below will always automatically run this command first, so, you don't need to manually run it.
 make select-workspace # Optional - This will also trigger the make init. You don't need to run this command manually.
-make plan ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
-make apply AUTOAPPROVE ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
-make destroy AUTOAPPROVE ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default demo ENV
+make plan ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default dev ENV
+make apply AUTOAPPROVE=true ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default dev ENV
+make destroy AUTOAPPROVE=true ENV=[dev,staging,prod] # This command will run the make select-workspace first, you can skip the ENV to use the default dev ENV
 ```
 
 ### Window user note

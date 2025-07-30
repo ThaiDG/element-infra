@@ -1,11 +1,11 @@
 # Check if ENV is set
 if (-not $env:ENV -or $env:ENV -eq "") {
-    Write-Host "ENV is not set. Using default workspace: demo." -ForegroundColor Yellow
+    Write-Host "ENV is not set. Using default workspace: dev." -ForegroundColor Yellow
     Write-Host -NoNewline "Would you like to continue? [Y/n]: " -ForegroundColor Yellow
     $reply = Read-Host
 
     if ($reply -eq "" -or $reply -eq "Y" -or $reply -eq "y") {
-        $env:ENV = "demo"
+        $env:ENV = "dev"
         Write-Host "Proceeding with workspace: $env:ENV" -ForegroundColor Cyan
         # Select the workspace
         terraform workspace select $env:ENV
