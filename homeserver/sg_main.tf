@@ -8,9 +8,9 @@ module "synapse_sg" {
 
   ingress_rules = [
     {
-      description = "Allow traffic for Synapse main port 8008"
-      from_port   = 8008
-      to_port     = 8008
+      description = "Allow traffic ALB routing to Nginx port 80"
+      from_port   = 80
+      to_port     = 80
       protocol    = "tcp"
       cidr_blocks = []
       security_groups = [
@@ -18,7 +18,7 @@ module "synapse_sg" {
       ]
     },
     {
-      description = "Allow traffic for Synapse federation port 8448"
+      description = "Allow traffic ALB routing to Synapse federation port 8448"
       from_port   = 8448
       to_port     = 8448
       protocol    = "tcp"

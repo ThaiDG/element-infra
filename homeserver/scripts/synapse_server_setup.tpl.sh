@@ -20,7 +20,6 @@ apt-get update && apt-get upgrade -y
 # Set up UFW rules
 ufw allow 22/tcp
 ufw allow http
-ufw allow 8008
 ufw allow 8448
 # Enable UFW
 ufw --force enable
@@ -171,7 +170,6 @@ services:
       - ./synapse/data:/data
       - ./synapse/config:/config
     ports:
-      - "8008:8008"
       - "8448:8448"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
@@ -190,11 +188,7 @@ services:
       - LIVEKIT_URL=$${LIVEKIT_URL}
       - LIVEKIT_KEY=$${LIVEKIT_KEY}
       - LIVEKIT_SECRET=$${LIVEKIT_SECRET}
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - LIVEKIT_FULL_ACCESS_HOMESERVERS=$${SYNAPSE_DNS}
 
   nginx:
     image: nginx:latest
@@ -202,7 +196,6 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -236,7 +229,7 @@ POSTGRES_DB=$POSTGRES_DB
 SYNAPSE_DB=$SYNAPSE_DB
 AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
 AWS_REGION=$AWS_REGION
-LIVEKIT_URL=$LIVEKIT_URL
+LIVEKIT_URL=wss://$LIVEKIT_URL
 LIVEKIT_KEY=$LIVEKIT_KEY
 LIVEKIT_SECRET=$LIVEKIT_SECRET
 SYNAPSE_DNS=$SYNAPSE_DNS
@@ -268,22 +261,33 @@ http {
     default_type application/octet-stream;
     sendfile on;
     keepalive_timeout 65;
+    # Enable access and error logging
+    access_log /var/log/nginx/access.log combined;
+    error_log /var/log/nginx/error.log debug;
+
     server {
-        listen 8008;
+        listen 80;
         server_name $SYNAPSE_DNS;
-        location /_matrix/ {
+
+        # Synapse endpoints
+        location ~ ^(/_matrix/|/.well-known/|/health) {
             proxy_pass http://synapse:8008;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
         }
-        location /livekit/jwt {
+
+        # JWT Auth / SFU endpoints
+        location ~ ^/(sfu/get|healthz)$ {
             proxy_pass http://jwt-auth:8080;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-Forwarded-Host \$host;
         }
     }
 }
@@ -463,8 +467,10 @@ rc_delayed_event_mgmt:
 serve_server_wellknown: true
 extra_well_known_client_content:
   org.matrix.msc4143.rtc_foci:
-    - type: "LiveKit"
-      livekit_service_url: "https://$SYNAPSE_DNS/livekit/jwt"
+    - type: "livekit"
+      livekit_service_url: "https://$SYNAPSE_DNS"
+    - type: "nextgen_new_foci_type"
+      props_for_nextgen_foci: "val"
 
 
 # vim:ft=yaml

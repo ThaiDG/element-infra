@@ -49,12 +49,12 @@ resource "aws_lb" "synapse_alb" {
 module "synapse_alb_main" {
   source                            = "./modules/EC2/LoadBalancing"
   load_balancer_arn                 = aws_lb.synapse_alb.arn
-  target_group_port                 = 8008
+  target_group_port                 = 80
   target_group_protocol             = "HTTP"
   target_group_vpc_id               = var.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
-  target_group_health_check_port    = "8008"
+  target_group_health_check_port    = "80"
   listener_port                     = 443
   listener_protocol                 = "HTTPS"
   certificate_arn                   = data.aws_acm_certificate.default.arn
@@ -69,7 +69,7 @@ module "synapse_alb_federation" {
   target_group_vpc_id               = var.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
-  target_group_health_check_port    = "8008"
+  target_group_health_check_port    = "80"
   listener_port                     = 8448
   listener_protocol                 = "HTTPS"
   certificate_arn                   = data.aws_acm_certificate.default.arn
