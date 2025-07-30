@@ -16,5 +16,15 @@ variable "pub2" {
 variable "root_domain" {
   description = "Root domain for the application"
   type        = string
-  default     = "demo.tapofthink.com"
+}
+
+variable "workspace" {
+  description = "The current Terraform workspace"
+  type        = string
+  default     = "dev"
+
+  validation {
+    condition     = can(regex("^(demo|dev|staging|prod)$", var.workspace))
+    error_message = "Workspace must be one of: demo, dev, staging, prod."
+  }
 }

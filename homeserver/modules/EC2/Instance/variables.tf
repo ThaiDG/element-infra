@@ -19,5 +19,5 @@ variable "launch_template_id" {
 variable "ec2_name" {
   description = "The name tag for the EC2 instance"
   type        = string
-  default     = "demo-ec2"
+  default     = "dev-ec2"
 }
