@@ -1,16 +1,11 @@
 .ONESHELL:
 PYENV := $(shell command -v pyenv 2>/dev/null)
 POETRY := $(shell command -v poetry 2>/dev/null)
-PYTHON_VERSION := 3.12.0
+PYTHON_VERSION := 3.12
 
 check-env:
 	@if [ -z "$(PYENV)" ]; then
-		echo "📦 pyenv not found. Installing build dependencies...";
-		sudo apt update;
-		sudo apt install -y make build-essential libssl-dev zlib1g-dev \
-			libbz2-dev libreadline-dev libsqlite3-dev curl \
-			libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev;
-		echo "📦 Installing pyenv...";
+		echo "📦 pyenv not found. Installing pyenv...";
 		curl https://pyenv.run | bash;
 		export PYENV_ROOT="$$HOME/.pyenv";
 		export PATH="$$PYENV_ROOT/bin:$$PATH";
@@ -25,6 +20,12 @@ check-env:
 	fi
 
 	@if ! pyenv versions | grep -q "$(PYTHON_VERSION)"; then
+		echo "📦 Python$(PYTHON_VERSION) not found. Installing build dependencies...";
+		sudo apt-get update;
+		sudo apt-get install -y make build-essential libssl-dev zlib1g-dev \
+			libbz2-dev libreadline-dev libsqlite3-dev curl \
+			libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev;
+
 		echo "📦 Installing Python $(PYTHON_VERSION)...";
 		pyenv install $(PYTHON_VERSION);
 	else
