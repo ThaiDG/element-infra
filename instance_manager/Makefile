@@ -41,7 +41,7 @@ check-env:
 	fi
 
 deps: check-env
-	poetry install --no-root
+	poetry install
 
 hibernate: deps
 	poetry run python -m instance_manager.manage_lifecycle dev hibernate
