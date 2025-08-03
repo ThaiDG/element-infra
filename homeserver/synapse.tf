@@ -13,7 +13,7 @@ data "template_file" "synapse_init" {
 }
 
 module "synapse_lt" {
-  source = "./modules/EC2/LaunchTemplate"
+  source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-synapse-web-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
@@ -79,7 +79,7 @@ module "synapse_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
   asg_name              = "${var.workspace}-synapse-server-asg"
   asg_desired_capacity  = 1
-  asg_min_size          = 1
+  asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 3
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.synapse_lt.launch_template_id

@@ -59,7 +59,7 @@ module "sygnal_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
   asg_name              = "${var.workspace}-sygnal-service-asg"
   asg_desired_capacity  = 1
-  asg_min_size          = 1
+  asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.sygnal_lt.launch_template_id

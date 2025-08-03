@@ -2,7 +2,7 @@ resource "aws_lb" "coturn_nlb_tcp" {
   name_prefix        = "co-tcp"
   load_balancer_type = "network"
   subnets            = [var.pub1, var.pub2]
-  security_groups    = [
+  security_groups = [
     module.coturn_nlb_sg.security_group_id,
     module.synapse_sg.security_group_id, # Allow traffic from Synapse security group
   ]
@@ -12,7 +12,7 @@ resource "aws_lb" "coturn_nlb_udp" {
   name_prefix        = "co-udp"
   load_balancer_type = "network"
   subnets            = [var.pub1, var.pub2]
-  security_groups    = [
+  security_groups = [
     module.coturn_nlb_sg.security_group_id,
     module.synapse_sg.security_group_id, # Allow traffic from Synapse security group
   ]
@@ -24,7 +24,7 @@ data "template_file" "coturn_tcp_init" {
   vars = {
     nlb_dns     = aws_lb.coturn_nlb_tcp.dns_name
     efs_id      = module.efs.efs_id
-    nfs_version = "4.1"  # Default NFS version
+    nfs_version = "4.1" # Default NFS version
     region      = data.aws_region.current.name
     root_domain = var.root_domain
   }
@@ -36,14 +36,14 @@ data "template_file" "coturn_udp_init" {
   vars = {
     nlb_dns     = aws_lb.coturn_nlb_udp.dns_name
     efs_id      = module.efs.efs_id
-    nfs_version = "4.1"  # Default NFS version
+    nfs_version = "4.1" # Default NFS version
     region      = data.aws_region.current.name
     root_domain = var.root_domain
   }
 }
 
 module "coturn_tcp_lt" {
-  source = "./modules/EC2/LaunchTemplate"
+  source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-coturn-tcp-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
@@ -61,7 +61,7 @@ module "coturn_tcp_lt" {
 }
 
 module "coturn_udp_lt" {
-  source = "./modules/EC2/LaunchTemplate"
+  source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-coturn-udp-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
@@ -126,7 +126,7 @@ module "coturn_tcp_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
   asg_name              = "${var.workspace}-coturn-tcp-asg"
   asg_desired_capacity  = 1
-  asg_min_size          = 1
+  asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.coturn_tcp_lt.launch_template_id
@@ -139,7 +139,7 @@ module "coturn_udp_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
   asg_name              = "${var.workspace}-coturn-udp-asg"
   asg_desired_capacity  = 1
-  asg_min_size          = 1
+  asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 2
   asg_subnet_ids        = [var.pub1, var.pub2]
   launch_template_id    = module.coturn_udp_lt.launch_template_id
