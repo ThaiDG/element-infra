@@ -29,7 +29,7 @@ switch ($Action) {
     "plan" {
         # Get the current workspace
         $workspace = terraform workspace show
-        $env:TF_var_workspace = $workspace
+        $env:TF_VAR_workspace = $workspace
         # Set the root domain based on the current workspace
         if ($workspaceDomains.ContainsKey($workspace)) {
             $rootDomain = $workspaceDomains[$workspace]
@@ -37,7 +37,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain = $rootDomain
+        $env:TF_VAR_root_domain = $rootDomain
 
         terraform plan -var-file="terraform.tfvars"
     }
@@ -45,7 +45,7 @@ switch ($Action) {
     "apply" {
         # Get the current workspace
         $workspace = terraform workspace show
-        $env:TF_var_workspace = $workspace
+        $env:TF_VAR_workspace = $workspace
         # Set the root domain based on the current workspace
         if ($workspaceDomains.ContainsKey($workspace)) {
             $rootDomain = $workspaceDomains[$workspace]
@@ -53,7 +53,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain = $rootDomain
+        $env:TF_VAR_root_domain = $rootDomain
 
         if ($AutoApprove) {
             terraform apply -auto-approve -var-file="terraform.tfvars"
@@ -65,7 +65,7 @@ switch ($Action) {
     "destroy" {
         # Get the current workspace
         $workspace = terraform workspace show
-        $env:TF_var_workspace = $workspace
+        $env:TF_VAR_workspace = $workspace
         # Set the root domain based on the current workspace
         if ($workspaceDomains.ContainsKey($workspace)) {
             $rootDomain = $workspaceDomains[$workspace]
@@ -73,7 +73,7 @@ switch ($Action) {
             Write-Error "Unknown workspace: $workspace" -ErrorAction Stop
             exit 1
         }
-        $env:TF_var_root_domain = $rootDomain
+        $env:TF_VAR_root_domain = $rootDomain
 
         if ($AutoApprove) {
             terraform destroy -auto-approve -var-file="terraform.tfvars"
