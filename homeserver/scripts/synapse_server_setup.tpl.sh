@@ -281,7 +281,15 @@ http {
         }
 
         # JWT Auth / SFU endpoints
-        location ~ ^/(sfu/get|healthz)$ {
+        location = /sfu/get {
+            proxy_pass http://jwt-auth:8080;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-Forwarded-Host \$host;
+        }
+        location = /healthz {
             proxy_pass http://jwt-auth:8080;
             proxy_set_header Host \$host;
             proxy_set_header X-Real-IP \$remote_addr;
