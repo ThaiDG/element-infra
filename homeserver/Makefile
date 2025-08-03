@@ -1,4 +1,5 @@
-.PHONY: select-workspace init plan apply destroy
+.PHONY: select-workspace init plan apply destroy \
+	refresh sygnal-refresh synapse-refresh coturn-refresh element-refresh
 
 # I will update the script to support Linux and MacOS when I can access to a Linux or MacOS environment.
 # This Makefile is designed to work with both Windows and Unix-like systems (Linux, MacOS).
@@ -53,3 +54,18 @@ endif
 else
 	@./terraform-deploy.sh -Action destroy
 endif
+
+synapse-refresh:
+	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-synapse-server-asg --region ap-southeast-1
+
+sygnal-refresh:
+	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-sygnal-service-asg --region ap-southeast-1
+
+coturn-refresh:
+	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-coturn-tcp-asg --region ap-southeast-1
+	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-coturn-udp-asg --region ap-southeast-1
+
+element-refresh:
+	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-element-web-asg --region ap-southeast-1
+
+refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh
