@@ -11,6 +11,10 @@ resource "aws_launch_template" "launch_template" {
     name = var.iam_instance_profile_name
   }
 
+  hibernation_options {
+    configured = true
+  }
+
   tag_specifications {
     resource_type = "instance"
     tags = {
@@ -35,8 +39,8 @@ resource "aws_launch_template" "launch_template" {
   block_device_mappings {
     device_name = "/dev/sda1"
     ebs {
-      volume_size = var.volume_size
-      volume_type = "gp3"
+      volume_size           = var.volume_size
+      volume_type           = "gp3"
       delete_on_termination = true
     }
   }
