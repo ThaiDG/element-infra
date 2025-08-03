@@ -40,6 +40,7 @@ If you don't want to specific the OS for every make command then follow the belo
   - /sygnal/apns/team_id
   - /sygnal/apns/key_id
   - /sygnal/apns/auth_key_`key_id`
+  - /sygnal/apns/bundle_id
 - Google Cloud Messaging/Firebase Cloud Messaging (GCM/FCM):
   - /sygnal/gcm/package-name
   - /sygnal/gcm/project-id

@@ -92,6 +92,14 @@ AUTHKEY=$(aws ssm get-parameter \
   --output text
 )
 
+BUNDLE_ID=$(aws ssm get-parameter \
+  --name "/sygnal/apns/bundle_id" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
 # FCM/GCM credentials
 PROJECT_ID=$(aws ssm get-parameter \
   --name "/sygnal/gcm/project-id" \
@@ -233,13 +241,13 @@ metrics:
 apps:
   # This is an example APNs push configuration
   #
-  com.example.myapp.ios:
+  $BUNDLE_ID:
     type: apns
     # Authentication
     keyfile: /sygnal/AuthKey_$KEY_ID.p8
     key_id: $KEY_ID
     team_id: $TEAM_ID
-    topic: MY_TOPIC
+    topic: $BUNDLE_ID
     inflight_request_limit: 512
     platform: sandbox
 
