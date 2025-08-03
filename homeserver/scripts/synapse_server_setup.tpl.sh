@@ -459,6 +459,7 @@ experimental_features:
 #     admin_token: $REGISTRATION_SECRET
 
 # Enable LiveKit for Element Call
+  msc2967_enabled: true
   msc3266_enabled: true
   msc4222_enabled: true
   msc4140_enabled: true
