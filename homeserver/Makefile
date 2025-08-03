@@ -55,17 +55,19 @@ else
 	@./terraform-deploy.sh -Action destroy
 endif
 
+# Refresh instances in the specified Auto Scaling Groups
+# The role is to refresh the instances of the dev environment only
 synapse-refresh:
-	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-synapse-server-asg --region ap-southeast-1
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "synapse-server"
 
 sygnal-refresh:
-	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-sygnal-service-asg --region ap-southeast-1
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "sygnal-service"
 
 coturn-refresh:
-	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-coturn-tcp-asg --region ap-southeast-1
-	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-coturn-udp-asg --region ap-southeast-1
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn-tcp"
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn-udp"
 
 element-refresh:
-	@aws autoscaling start-instance-refresh --auto-scaling-group-name dev-element-web-asg --region ap-southeast-1
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "element-web"
 
 refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh
