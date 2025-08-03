@@ -1,5 +1,5 @@
 resource "aws_autoscaling_group" "autoscaling_group_template" {
-  name                = var.asg_name
+  name_prefix         = var.asg_name
   desired_capacity    = var.asg_desired_capacity
   min_size            = var.asg_min_size
   max_size            = var.asg_max_size
