@@ -8,13 +8,13 @@ data "template_file" "sygnal_init" {
 }
 
 module "sygnal_lt" {
-  source = "./modules/EC2/LaunchTemplate"
+  source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-sygnal-service-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
   user_data     = data.template_file.sygnal_init.rendered
   instance_name = "${var.workspace}-sygnal-service"
-  volume_size   = 8
+  volume_size   = 16
   security_group_ids = [
     module.sygnal_sg.security_group_id,
     module.ssh_sg.security_group_id
@@ -65,5 +65,5 @@ module "sygnal_asg" {
   launch_template_id    = module.sygnal_lt.launch_template_id
   instance_name         = "${var.workspace}-sygnal-service"
   asg_target_group_arns = [module.sygnal_alb.target_group_arn]
-#   asg_health_check_type = "ELB"
+  #   asg_health_check_type = "ELB"
 }
