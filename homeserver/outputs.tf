@@ -22,3 +22,13 @@ output "efs_id" {
   description = "EFS ID for storing certificates"
   value       = module.efs.efs_id
 }
+
+output "ami_id" {
+  description = "AMI ID used for the instances"
+  value       = data.aws_ami.ubuntu_2404.id
+}
+
+output "synapse_sg_id" {
+  description = "Security group ID for Synapse"
+  value       = module.synapse_sg.security_group_id
+}

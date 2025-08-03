@@ -20,17 +20,7 @@ data "aws_ami" "ubuntu_2404" {
   owners = ["099720109477"] # Canonical
 
   filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-24.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
+    name   = "image-id"
+    values = ["ami-02c7683e4ca3ebf58"]
   }
 }
