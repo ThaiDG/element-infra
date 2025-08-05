@@ -4,7 +4,7 @@ module "synapse_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-synapse-security-group"
   security_group_description = "Security group for Synapse main services"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -35,7 +35,7 @@ module "synapse_alb_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-synapse-alb-security-group"
   security_group_description = "Security group for Synapse ALB"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -71,7 +71,7 @@ module "element_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-element-security-group"
   security_group_description = "Security group for Element client"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -92,7 +92,7 @@ module "element_alb_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-element-alb-security-group"
   security_group_description = "Security group for Element ALB"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -111,7 +111,7 @@ module "coturn_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-coturn-security-group"
   security_group_description = "Security group for Coturn services"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -182,7 +182,7 @@ module "coturn_nlb_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-coturn-nlb-tcp-security-group"
   security_group_description = "Security group for Coturn NLB TCP"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -241,7 +241,7 @@ module "sygnal_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-sygnal-security-group"
   security_group_description = "Security group for Sygnal service"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -261,7 +261,7 @@ module "sygnal_alb_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-sygnal-alb-security-group"
   security_group_description = "Security group for Sygnal ALB"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -282,7 +282,7 @@ module "efs_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-efs-security-group"
   security_group_description = "Allow NFS traffic for EFS"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {
@@ -290,7 +290,7 @@ module "efs_sg" {
       from_port   = 2049
       to_port     = 2049
       protocol    = "tcp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.vpc_cidr}"] # VPC CIDR block
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"] # VPC CIDR block
     }
   ]
 }
@@ -300,7 +300,7 @@ module "ssh_sg" {
   source                     = "./modules/EC2/SecurityGroup"
   security_group_name_prefix = "${var.workspace}-ssh-security-group"
   security_group_description = "Security group for SSH access"
-  vpc_id                     = data.terraform_remote_state.vpc.vpc_id
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress_rules = [
     {

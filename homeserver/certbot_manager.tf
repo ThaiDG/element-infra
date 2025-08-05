@@ -32,9 +32,12 @@ module "certbot_asg" {
   asg_desired_capacity = 1
   asg_min_size         = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size         = 1
-  asg_subnet_ids       = [var.pub1] # Ensure this matches the EFS subnet
   launch_template_id   = module.certbot_manager_lt.launch_template_id
   instance_name        = "${var.workspace}-certbot-manager"
+
+  asg_subnet_ids = [
+    data.terraform_remote_state.vpc.outputs.public_subnet_ids[0] # Ensure this matches the EFS subnet
+  ]
 
   depends_on = [
     module.coturn_tcp_route53_record,

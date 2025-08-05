@@ -1,13 +1,3 @@
-variable "pub1" {
-  description = "Public Subnet 1 ID"
-  type        = string
-}
-
-variable "pub2" {
-  description = "Public Subnet 2 ID"
-  type        = string
-}
-
 variable "root_domain" {
   description = "Root domain for the application"
   type        = string

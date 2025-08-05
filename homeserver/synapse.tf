@@ -36,10 +36,7 @@ resource "aws_lb" "synapse_alb" {
   preserve_host_header       = true
   enable_xff_client_port     = true
   xff_header_processing_mode = "preserve"
-  subnets = [
-    var.pub1,
-    var.pub2
-  ]
+  subnets                    = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   security_groups = [
     module.synapse_alb_sg.security_group_id
   ]
@@ -51,7 +48,7 @@ module "synapse_alb_main" {
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 80
   target_group_protocol             = "HTTP"
-  target_group_vpc_id               = data.terraform_remote_state.vpc.vpc_id
+  target_group_vpc_id               = data.terraform_remote_state.vpc.outputs.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
   target_group_health_check_port    = "80"
@@ -66,7 +63,7 @@ module "synapse_alb_federation" {
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 8448
   target_group_protocol             = "HTTP"
-  target_group_vpc_id               = data.terraform_remote_state.vpc.vpc_id
+  target_group_vpc_id               = data.terraform_remote_state.vpc.outputs.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
   target_group_health_check_port    = "80"
@@ -81,7 +78,7 @@ module "synapse_asg" {
   asg_desired_capacity  = 1
   asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 3
-  asg_subnet_ids        = [var.pub1, var.pub2]
+  asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.synapse_lt.launch_template_id
   instance_name         = "${var.workspace}-synapse-server"
   asg_target_group_arns = [module.synapse_alb_main.target_group_arn, module.synapse_alb_federation.target_group_arn]

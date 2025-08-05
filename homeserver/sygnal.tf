@@ -31,10 +31,7 @@ resource "aws_lb" "sygnal_alb" {
   preserve_host_header       = true
   enable_xff_client_port     = true
   xff_header_processing_mode = "preserve"
-  subnets = [
-    var.pub1,
-    var.pub2
-  ]
+  subnets                    = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   security_groups = [
     module.sygnal_alb_sg.security_group_id
   ]
@@ -45,7 +42,7 @@ module "sygnal_alb" {
   load_balancer_arn                  = aws_lb.sygnal_alb.arn
   target_group_port                  = 5000
   target_group_protocol              = "HTTP"
-  target_group_vpc_id                = data.terraform_remote_state.vpc.vpc_id
+  target_group_vpc_id                = data.terraform_remote_state.vpc.outputs.vpc_id
   target_group_health_check_enabled  = true
   target_group_health_check_path     = "/health"
   target_group_health_check_port     = "5000"
@@ -61,7 +58,7 @@ module "sygnal_asg" {
   asg_desired_capacity  = 1
   asg_min_size          = var.workspace == "dev" ? 0 : 1 # Set to 0 for dev workspace
   asg_max_size          = 2
-  asg_subnet_ids        = [var.pub1, var.pub2]
+  asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.sygnal_lt.launch_template_id
   instance_name         = "${var.workspace}-sygnal-service"
   asg_target_group_arns = [module.sygnal_alb.target_group_arn]

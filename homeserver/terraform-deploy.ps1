@@ -11,7 +11,6 @@ Write-Host "Running Terraform '$Action'" -ForegroundColor Cyan
 $baseDomain = "tapofthink.com"
 # Define the root domains for each workspace
 $workspaceDomains = @{
-    "demo" = "demo.$baseDomain"
     "dev" = "dev.$baseDomain"
     "staging" = "staging.$baseDomain"
     "prod" = "social.$baseDomain"
@@ -39,7 +38,7 @@ switch ($Action) {
         }
         $env:TF_VAR_root_domain = $rootDomain
 
-        terraform plan -var-file="terraform.tfvars"
+        terraform plan
     }
 
     "apply" {
@@ -56,9 +55,9 @@ switch ($Action) {
         $env:TF_VAR_root_domain = $rootDomain
 
         if ($AutoApprove) {
-            terraform apply -auto-approve -var-file="terraform.tfvars"
+            terraform apply -auto-approve
         } else {
-            terraform apply -var-file="terraform.tfvars"
+            terraform apply
         }
     }
 
@@ -76,9 +75,9 @@ switch ($Action) {
         $env:TF_VAR_root_domain = $rootDomain
 
         if ($AutoApprove) {
-            terraform destroy -auto-approve -var-file="terraform.tfvars"
+            terraform destroy -auto-approve
         } else {
-            terraform destroy -var-file="terraform.tfvars"
+            terraform destroy
         }
     }
 }
