@@ -9,6 +9,7 @@ ELEMENT_DNS="${element_dns}"
 SYGNAL_DNS="${sygnal_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
+POSTGRES_DNS="${postgres_dns}"
 
 # Define constants
 APP_DIR="/app"
@@ -164,8 +165,8 @@ services:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:latest
     container_name: synapse
     restart: always
-    depends_on:
-      - postgres
+    # depends_on:
+    #   - postgres
     volumes:
       - ./synapse/data:/data
       - ./synapse/config:/config
@@ -202,23 +203,23 @@ services:
       - synapse
       - jwt-auth
 
-  postgres:
-    image: postgres:14
-    restart: always
-    volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    environment:
-      - POSTGRES_USER=$${POSTGRES_USER}
-      - POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
-      - POSTGRES_DB=$${POSTGRES_DB}
-    ports:
-      - "127.0.0.1:5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${SYNAPSE_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+  # postgres:
+  #   image: postgres:14
+  #   restart: always
+  #   volumes:
+  #     - ./postgres/data:/var/lib/postgresql/data
+  #     - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #   environment:
+  #     - POSTGRES_USER=$${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=$${POSTGRES_DB}
+  #   ports:
+  #     - "127.0.0.1:5432:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${SYNAPSE_DB}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
 EOF
 
 # Create .env file
@@ -352,7 +353,7 @@ database:
     user: $POSTGRES_USER
     password: $POSTGRES_PASSWORD
     database: $SYNAPSE_DB
-    host: postgres
+    host: $POSTGRES_DNS
 log_config: "/data/$SYNAPSE_DNS.log.config"
 registration_shared_secret: $REGISTRATION_SECRET
 media_store_path: /data/media_store

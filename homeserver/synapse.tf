@@ -9,6 +9,7 @@ data "template_file" "synapse_init" {
     sygnal_dns     = "${module.sygnal_route53_record.record_dns_name}"
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
     aws_region     = "${data.aws_region.current.name}"
+    postgres_dns   = "${data.terraform_remote_state.database.outputs.database_dns}"
   }
 }
 
@@ -22,6 +23,7 @@ module "synapse_lt" {
   volume_size   = 30
   security_group_ids = [
     module.synapse_sg.security_group_id,
+    data.terraform_remote_state.database.outputs.database_sg_id,
     module.ssh_sg.security_group_id
   ]
 
