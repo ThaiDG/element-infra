@@ -51,7 +51,7 @@ module "synapse_alb_main" {
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 80
   target_group_protocol             = "HTTP"
-  target_group_vpc_id               = var.vpc_id
+  target_group_vpc_id               = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
   target_group_health_check_port    = "80"
@@ -66,7 +66,7 @@ module "synapse_alb_federation" {
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 8448
   target_group_protocol             = "HTTP"
-  target_group_vpc_id               = var.vpc_id
+  target_group_vpc_id               = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
   target_group_health_check_port    = "80"

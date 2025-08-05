@@ -45,7 +45,7 @@ module "sygnal_alb" {
   load_balancer_arn                  = aws_lb.sygnal_alb.arn
   target_group_port                  = 5000
   target_group_protocol              = "HTTP"
-  target_group_vpc_id                = var.vpc_id
+  target_group_vpc_id                = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled  = true
   target_group_health_check_path     = "/health"
   target_group_health_check_port     = "5000"

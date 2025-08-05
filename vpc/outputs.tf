@@ -20,3 +20,7 @@ output "private_subnet_ids" {
     module.private_subnet_3.subnet_id
   ]
 }
+
+output "vpc_cidr" {
+  value = aws_vpc.main.cidr_block
+}

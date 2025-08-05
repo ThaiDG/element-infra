@@ -1,8 +1,3 @@
-variable "vpc_id" {
-  description = "The ID of the VPC"
-  type        = string
-}
-
 variable "pub1" {
   description = "Public Subnet 1 ID"
   type        = string

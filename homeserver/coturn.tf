@@ -85,7 +85,7 @@ module "coturn_nlb_3478_tcp" {
   load_balancer_arn                  = aws_lb.coturn_nlb_tcp.arn
   target_group_port                  = 3478
   target_group_protocol              = "TCP"
-  target_group_vpc_id                = var.vpc_id
+  target_group_vpc_id                = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled  = true
   target_group_health_check_port     = "3478"
   target_group_health_check_protocol = "TCP"
@@ -99,7 +99,7 @@ module "coturn_nlb_5349_tcp" {
   load_balancer_arn                  = aws_lb.coturn_nlb_tcp.arn
   target_group_port                  = 5349
   target_group_protocol              = "TCP"
-  target_group_vpc_id                = var.vpc_id
+  target_group_vpc_id                = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled  = true
   target_group_health_check_port     = "3478"
   target_group_health_check_protocol = "TCP"
@@ -113,7 +113,7 @@ module "coturn_nlb_3478_udp" {
   load_balancer_arn                  = aws_lb.coturn_nlb_udp.arn
   target_group_port                  = 3478
   target_group_protocol              = "UDP"
-  target_group_vpc_id                = var.vpc_id
+  target_group_vpc_id                = data.terraform_remote_state.vpc.vpc_id
   target_group_health_check_enabled  = true
   target_group_health_check_port     = "3478"
   target_group_health_check_protocol = "TCP"
