@@ -19,7 +19,7 @@ variable "workspace" {
   default     = "dev"
 
   validation {
-    condition     = can(regex("^(demo|dev|staging|prod)$", var.workspace))
-    error_message = "Workspace must be one of: demo, dev, staging, prod."
+    condition     = can(regex("^(dev|staging|prod)$", var.workspace))
+    error_message = "Workspace must be one of: dev, staging, prod."
   }
 }
