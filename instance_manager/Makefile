@@ -41,10 +41,11 @@ check-env:
 	fi
 
 deps: check-env
-	poetry install
+	@poetry lock --quiet
+	@poetry install
 
 hibernate: deps
-	poetry run python -m instance_manager.manage_lifecycle dev hibernate
+	@poetry run python -m instance_manager.manage_lifecycle dev hibernate
 
 resume: deps
-	poetry run python -m instance_manager.manage_lifecycle dev resume
+	@poetry run python -m instance_manager.manage_lifecycle dev resume
