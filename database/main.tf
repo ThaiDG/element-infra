@@ -4,10 +4,11 @@ resource "aws_security_group" "rds_sg" {
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
 
   ingress {
-    from_port = 5432
-    to_port   = 5432
-    protocol  = "tcp"
-    self      = true
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [data.terraform_remote_state.vpc.outputs.client_vpn_sg_id]
+    self            = true
   }
 
   egress {
