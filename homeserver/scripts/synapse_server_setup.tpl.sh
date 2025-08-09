@@ -426,7 +426,7 @@ web_client_location: "https://$ELEMENT_DNS"
 # Push notifications to Sygnal
 push:
   enabled: true
-  gateway_url: "https://$SYGNAL_DNS:5000/_matrix/push/v1/notify"
+  gateway_url: "https://$SYGNAL_DNS/_matrix/push/v1/notify"
 
 # Registration settings
 enable_registration: true
