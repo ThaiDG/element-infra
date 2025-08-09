@@ -25,7 +25,7 @@ data "template_file" "coturn_tcp_init" {
     nlb_dns     = aws_lb.coturn_nlb_tcp.dns_name
     efs_id      = module.efs.efs_id
     nfs_version = "4.1" # Default NFS version
-    region      = data.aws_region.current.name
+    region      = data.aws_region.current.region
     root_domain = var.root_domain
   }
 }
@@ -37,7 +37,7 @@ data "template_file" "coturn_udp_init" {
     nlb_dns     = aws_lb.coturn_nlb_udp.dns_name
     efs_id      = module.efs.efs_id
     nfs_version = "4.1" # Default NFS version
-    region      = data.aws_region.current.name
+    region      = data.aws_region.current.region
     root_domain = var.root_domain
   }
 }

@@ -5,7 +5,7 @@ data "template_file" "element_init" {
     synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
     element_dns    = "${module.element_route53_record.record_dns_name}"
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
-    aws_region     = "${data.aws_region.current.name}"
+    aws_region     = "${data.aws_region.current.region}"
   }
 }
 

@@ -4,7 +4,7 @@ data "template_file" "certbot_init" {
   vars = {
     efs_id      = module.efs.efs_id
     nfs_version = "4.1" # Default NFS version
-    region      = data.aws_region.current.name
+    region      = data.aws_region.current.region
     domain      = "*.${var.root_domain}" # Wildcard domain for certbot
   }
 }
