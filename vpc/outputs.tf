@@ -24,3 +24,7 @@ output "private_subnet_ids" {
 output "vpc_cidr" {
   value = aws_vpc.main.cidr_block
 }
+
+output "client_vpn_sg_id" {
+  value = aws_security_group.client_vpn_sg.id
+}

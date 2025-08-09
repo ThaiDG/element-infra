@@ -8,3 +8,8 @@ data "aws_region" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
+
+data "aws_acm_certificate" "client_vpn" {
+  domain   = "clientvpn.tapofthink.com"
+  statuses = ["ISSUED"]
+}
