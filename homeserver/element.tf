@@ -40,7 +40,7 @@ resource "aws_lb" "element_alb" {
 }
 
 # Routing to HTTPS for Element Web
-module "element_alb" {
+module "web_target" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.element_alb.arn
   target_group_port                  = 80
@@ -56,7 +56,7 @@ module "element_alb" {
 }
 
 # Routing the Prometheus port
-module "element_alb" {
+module "web_prometheus_target" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.element_alb.arn
   target_group_port                  = 9090
@@ -80,6 +80,9 @@ module "element_asg" {
   asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.element_lt.launch_template_id
   instance_name         = "${var.workspace}-element-web"
-  asg_target_group_arns = [module.element_alb.target_group_arn]
   asg_health_check_type = "ELB"
+  asg_target_group_arns = [
+    module.web_target.target_group_arn,
+    module.web_prometheus_target.target_group_arn
+  ]
 }

@@ -45,7 +45,7 @@ resource "aws_lb" "synapse_alb" {
 }
 
 # Main port for Synapse is 8008
-module "synapse_alb_main" {
+module "main_target" {
   source                            = "./modules/EC2/LoadBalancing"
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 80
@@ -60,7 +60,7 @@ module "synapse_alb_main" {
 }
 
 # Support port 8448 for federation
-module "synapse_alb_federation" {
+module "federation_target" {
   source                            = "./modules/EC2/LoadBalancing"
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 8448
@@ -75,7 +75,7 @@ module "synapse_alb_federation" {
 }
 
 # Routing the Prometheus port
-module "synapse_alb_federation" {
+module "synapse_prometheus_target" {
   source                            = "./modules/EC2/LoadBalancing"
   load_balancer_arn                 = aws_lb.synapse_alb.arn
   target_group_port                 = 9090
@@ -98,6 +98,10 @@ module "synapse_asg" {
   asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.synapse_lt.launch_template_id
   instance_name         = "${var.workspace}-synapse-server"
-  asg_target_group_arns = [module.synapse_alb_main.target_group_arn, module.synapse_alb_federation.target_group_arn]
   asg_health_check_type = "ELB"
+  asg_target_group_arns = [
+    module.main_target.target_group_arn,
+    module.federation_target.target_group_arn,
+    module.synapse_prometheus_target.target_group_arn
+  ]
 }

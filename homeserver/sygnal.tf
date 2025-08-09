@@ -38,7 +38,7 @@ resource "aws_lb" "sygnal_alb" {
 }
 
 # Routing to Sygnal port
-module "sygnal_alb" {
+module "sygnal_target" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.sygnal_alb.arn
   target_group_port                  = 5000
@@ -54,7 +54,7 @@ module "sygnal_alb" {
 }
 
 # Routing to Prometheus port
-module "sygnal_alb" {
+module "sygnal_prometheus_target" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.sygnal_alb.arn
   target_group_port                  = 9090
@@ -78,6 +78,9 @@ module "sygnal_asg" {
   asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.sygnal_lt.launch_template_id
   instance_name         = "${var.workspace}-sygnal-service"
-  asg_target_group_arns = [module.sygnal_alb.target_group_arn]
-  #   asg_health_check_type = "ELB"
+  asg_health_check_type = "ELB"
+  asg_target_group_arns = [
+    module.sygnal_target.target_group_arn,
+    module.sygnal_prometheus_target.target_group_arn
+  ]
 }
