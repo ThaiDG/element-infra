@@ -129,6 +129,9 @@ services:
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 EOF
 
+# Create prometheus volume directory
+mkdir -p prometheus
+
 # Create Prometheus job definition
 cat <<EOF > prometheus/prometheus.yaml
 global:

@@ -107,6 +107,8 @@ EOL
 # Step 3: Create folders for element
 echo "Creating folders for element..."
 mkdir -p element/{config,data}
+# Create prometheus volume directory
+mkdir -p prometheus
 
 # Step 4: Create config.json
 # Must investigate to create our own identity server instead of using vector.im

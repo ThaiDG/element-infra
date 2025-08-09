@@ -260,6 +260,8 @@ EOF
 mkdir -p synapse/{config,data}
 mkdir -p postgres/data
 touch postgres/init.sql
+# Create prometheus volume directory
+mkdir -p prometheus
 
 # Create init SQL content
 cat <<EOF > postgres/init.sql

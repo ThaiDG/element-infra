@@ -132,6 +132,8 @@ cd "$APP_DIR"
 
 # Create sygnal volume directory
 mkdir -p sygnal
+# Create prometheus volume directory
+mkdir -p prometheus
 
 # Create docker-compose.yaml
 cat <<EOF > docker-compose.yaml
