@@ -15,6 +15,7 @@ apt-get update && apt-get upgrade -y
 ufw allow 22/tcp
 ufw allow http
 ufw allow 5000
+ufw allow 9090  # Prometheus port
 # Enable UFW
 ufw --force enable
 
@@ -150,6 +151,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 EOF
 
 cat <<EOF > sygnal/AuthKey_$KEY_ID.p8
@@ -260,6 +269,17 @@ apps:
     service_account_file: /sygnal/$PROJECT_ID-firebase-adminsdk.json
     max_connections: 20
     inflight_request_limit: 512
+EOF
+
+# Create Prometheus job definition
+cat <<EOF > prometheus/prometheus.yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'sygnal'
+    static_configs:
+      - targets: ['sygnal:8000']
 EOF
 
 # Start the Sygnal service

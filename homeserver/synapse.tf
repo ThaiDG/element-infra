@@ -74,6 +74,21 @@ module "synapse_alb_federation" {
   certificate_arn                   = data.aws_acm_certificate.default.arn
 }
 
+# Routing the Prometheus port
+module "synapse_alb_federation" {
+  source                            = "./modules/EC2/LoadBalancing"
+  load_balancer_arn                 = aws_lb.synapse_alb.arn
+  target_group_port                 = 9090
+  target_group_protocol             = "HTTP"
+  target_group_vpc_id               = data.terraform_remote_state.vpc.outputs.vpc_id
+  target_group_health_check_enabled = true
+  target_group_health_check_path    = "/-/healthy"
+  target_group_health_check_port    = "9090"
+  listener_port                     = 9090
+  listener_protocol                 = "HTTPS"
+  certificate_arn                   = data.aws_acm_certificate.default.arn
+}
+
 module "synapse_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
   asg_name              = "${var.workspace}-synapse-server-asg"

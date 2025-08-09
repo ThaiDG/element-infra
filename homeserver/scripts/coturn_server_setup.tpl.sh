@@ -19,7 +19,7 @@ CONFIG_FILE="/etc/turnserver.conf"
 PRIVATE_IP=$(hostname -I | awk '{print $1}')
 
 # 1. Install Coturn and NFS client
-apt-get update && apt-get install -y coturn nfs-common
+apt-get update && apt-get install -y coturn nfs-common docker.io
 
 # 2. Enable Coturn service
 sed -i 's/^#TURNSERVER_ENABLED=1$/TURNSERVER_ENABLED=1/' /etc/default/coturn
@@ -57,6 +57,7 @@ verbose
 fingerprint
 lt-cred-mech
 user=admin:Admin123
+prometheus
 realm=$DOMAIN
 no-tcp-relay
 cert=$CERT_DEST_DIR/fullchain.pem
@@ -80,3 +81,68 @@ systemctl restart coturn
 
 # 7. Confirm it's running
 journalctl -u coturn -n 20 --no-pager
+
+# Setup for Prometheus monitoring
+# Start and enable Docker
+systemctl start docker
+systemctl enable docker
+
+# Install the docker compose verison 2
+# Define version - fetch latest dynamically
+COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep tag_name | cut -d '"' -f4)
+    
+# Define plugin path
+DOCKER_CONFIG=/root/.docker
+PLUGIN_DIR="$DOCKER_CONFIG/cli-plugins"
+
+# Create plugin directory
+mkdir -p "$PLUGIN_DIR"
+
+# Download Compose v2 binary
+echo "Downloading Docker Compose v2..."
+curl -SL "https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-linux-x86_64" -o "$PLUGIN_DIR/docker-compose"
+
+# Make it executable
+chmod +x "$PLUGIN_DIR/docker-compose"
+
+# Verify installation
+echo "Verifying Docker Compose installation..."
+docker compose version
+
+
+# Define constants
+APP_DIR="/app"
+
+# Create app directory and switch to it
+mkdir -p "$APP_DIR"
+cd "$APP_DIR"
+
+# Create docker-compose.yaml
+cat <<'EOF' > docker-compose.yaml
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+EOF
+
+# Create Prometheus job definition
+cat <<EOF > prometheus/prometheus.yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'coturn'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:9641']
+EOF
+
+# Start services
+echo "Starting Synapse and Postgres services..."
+docker compose up --wait --force-recreate
+
+echo "CoTURN server setup completed successfully."

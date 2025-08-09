@@ -16,6 +16,7 @@ apt-get update && apt-get upgrade -y
 # Set up UFW rules
 ufw allow 22/tcp
 ufw allow http
+ufw allow 9090  # Prometheus port
 # Enable UFW
 ufw --force enable
 
@@ -83,6 +84,24 @@ services:
     volumes:
       - ./element/config.$ELEMENT_DNS.json:/app/config.$ELEMENT_DNS.json
       - ./element/data:/app/data
+
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox
+    volumes:
+      - ./prometheus/blackbox.yaml:/etc/blackbox_exporter/config.yaml
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yaml'
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    depends_on:
+      - blackbox
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 EOL
 
 # Step 3: Create folders for element
@@ -119,6 +138,42 @@ cat <<EOL > element/config.$ELEMENT_DNS.json
   "disable_guests": true
 }
 EOL
+
+# Blackbox exporter configuration
+cat <<EOF > prometheus/blackbox.yaml
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+      valid_status_codes: [200, 301, 302]
+      follow_redirects: true
+EOF
+
+# Create Prometheus job definition
+cat <<EOF > prometheus/prometheus.yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://$ELEMENT_DNS
+        - https://$SYNAPSE_DNS
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+EOF
 
 # Step 5: Start Element web
 echo "Starting Element web..."

@@ -22,6 +22,7 @@ apt-get update && apt-get upgrade -y
 ufw allow 22/tcp
 ufw allow http
 ufw allow 8448
+ufw allow 9090  # Prometheus port
 # Enable UFW
 ufw --force enable
 
@@ -178,6 +179,17 @@ services:
       timeout: 10s
       retries: 5
 
+  synapse-usage-exporter:
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
+    container_name: synapse-usage-exporter
+    ports:
+      - 5000:5000
+    tmpfs:
+      - /tmp/prometheus
+    environment:
+      - APP_LOG_LEVEL=DEBUG
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+
   jwt-auth:
     image: ghcr.io/element-hq/lk-jwt-service:latest
     container_name: jwt-auth
@@ -202,6 +214,14 @@ services:
     depends_on:
       - synapse
       - jwt-auth
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 
   # postgres:
   #   image: postgres:14
@@ -302,6 +322,21 @@ http {
 }
 EOF
 
+# Create Prometheus job definition
+cat <<EOF > prometheus/prometheus.yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'synapse'
+    metrics_path: '/_synapse/metrics'
+    static_configs:
+      - targets: ['synapse:8000']
+  - job_name: 'synapse-usage'
+    static_configs:
+      - targets: ['synapse-usage-exporter:5000']
+EOF
+
 # Generate synapse config (requires Docker)
 docker run --rm \
   -v "$APP_DIR/synapse/data:/data" \
@@ -347,6 +382,9 @@ listeners:
     resources:
       - names: [federation]
         compress: false
+  - port: 8000
+    type: metrics
+    bind_addresses: ['127.0.0.1']
 database:
   name: psycopg2
   args:
@@ -358,6 +396,7 @@ log_config: "/data/$SYNAPSE_DNS.log.config"
 registration_shared_secret: $REGISTRATION_SECRET
 media_store_path: /data/media_store
 report_stats: true
+report_stats_endpoint: synapse-usage-exporter:5000/report-usage-stats/push
 macaroon_secret_key: $MACAROON_SECRET
 form_secret: $FORM_SECRET
 signing_key_path: "/data/$SYNAPSE_DNS.signing.key"

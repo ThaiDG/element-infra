@@ -78,7 +78,6 @@ module "coturn_udp_lt" {
   }
 }
 
-# Support port 3478 and 5349 for TURN over TLS
 # Target group for coTURN TCP non-TLS
 module "coturn_nlb_3478_tcp" {
   source                             = "./modules/EC2/LoadBalancing"
@@ -93,7 +92,8 @@ module "coturn_nlb_3478_tcp" {
   listener_protocol                  = "TCP"
   certificate_arn                    = ""
 }
-# Target group for coTURN TLS
+
+# Target group for coTURN TCP TLS
 module "coturn_nlb_5349_tcp" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.coturn_nlb_tcp.arn
@@ -107,6 +107,7 @@ module "coturn_nlb_5349_tcp" {
   listener_protocol                  = "TCP"
   certificate_arn                    = ""
 }
+
 # Target group for coTURN UDP non-TLS
 module "coturn_nlb_3478_udp" {
   source                             = "./modules/EC2/LoadBalancing"
@@ -121,6 +122,23 @@ module "coturn_nlb_3478_udp" {
   listener_protocol                  = "UDP"
   certificate_arn                    = ""
 }
+
+# Routing to Prometheus port
+module "sygnal_alb" {
+  source                             = "./modules/EC2/LoadBalancing"
+  load_balancer_arn                  = aws_lb.sygnal_alb.arn
+  target_group_port                  = 9090
+  target_group_protocol              = "HTTP"
+  target_group_vpc_id                = data.terraform_remote_state.vpc.outputs.vpc_id
+  target_group_health_check_enabled  = true
+  target_group_health_check_path     = "/-/healthy"
+  target_group_health_check_port     = "9090"
+  target_group_health_check_protocol = "HTTP"
+  listener_port                      = 9090
+  listener_protocol                  = "HTTPS"
+  certificate_arn                    = data.aws_acm_certificate.default.arn
+}
+
 # Auto Scaling Groups for coTURN TCP instances
 module "coturn_tcp_asg" {
   source                = "./modules/EC2/AutoScalingGroup"
@@ -132,7 +150,7 @@ module "coturn_tcp_asg" {
   launch_template_id    = module.coturn_tcp_lt.launch_template_id
   instance_name         = "${var.workspace}-coturn-tcp"
   asg_target_group_arns = [module.coturn_nlb_3478_tcp.target_group_arn, module.coturn_nlb_5349_tcp.target_group_arn]
-  # asg_health_check_type = "ELB"
+  asg_health_check_type = "ELB"
 }
 # Auto Scaling Groups for coTURN UDP instances
 module "coturn_udp_asg" {
