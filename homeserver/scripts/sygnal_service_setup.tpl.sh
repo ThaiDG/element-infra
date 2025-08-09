@@ -250,7 +250,7 @@ metrics:
 apps:
   # This is an example APNs push configuration
   #
-  $BUNDLE_ID:
+  $BUNDLE_ID.ios.prod:
     type: apns
     # Authentication
     keyfile: /sygnal/AuthKey_$KEY_ID.p8
@@ -258,7 +258,6 @@ apps:
     team_id: $TEAM_ID
     topic: $BUNDLE_ID
     inflight_request_limit: 512
-    platform: sandbox
 
   # This is an example GCM/FCM push configuration.
   #
