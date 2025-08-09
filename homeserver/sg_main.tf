@@ -12,7 +12,7 @@ module "synapse_sg" {
       from_port   = 80
       to_port     = 80
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.synapse_alb_sg.security_group_id}" # Allow traffic from Synapse's ALB security group
       ]
@@ -22,7 +22,17 @@ module "synapse_sg" {
       from_port   = 8448
       to_port     = 8448
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.synapse_alb_sg.security_group_id}" # Allow traffic from Synapse's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic ALB routing to Prometheus port 9090"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.synapse_alb_sg.security_group_id}" # Allow traffic from Synapse's ALB security group
       ]
@@ -56,10 +66,12 @@ module "synapse_alb_sg" {
       from_port   = 8448
       to_port     = 8448
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["0.0.0.0/0"] # Allow Federation traffic
       security_groups = [
-        "${module.element_sg.security_group_id}", # Allow traffic from Element security group
-        "${module.coturn_sg.security_group_id}",  # Allow traffic from Coturn security group
+        "${module.element_sg.security_group_id}",     # Allow traffic from Element security group
+        "${module.element_alb_sg.security_group_id}", # Allow traffic from Element ALB security group
+        "${module.coturn_sg.security_group_id}",      # Allow traffic from Coturn security group
+        "${module.coturn_nlb_sg.security_group_id}",  # Allow traffic from Coturn NLB security group
       ]
     }
   ]
@@ -79,9 +91,19 @@ module "element_sg" {
       from_port   = 80
       to_port     = 80
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.element_alb_sg.security_group_id}" # Allow traffic from Element's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for Prometheus"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.element_alb_sg.security_group_id}" # Allow traffic from Element's ALB Security Group
       ]
     }
   ]
@@ -119,7 +141,7 @@ module "coturn_sg" {
       from_port   = 3478
       to_port     = 3478
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -129,7 +151,7 @@ module "coturn_sg" {
       from_port   = 3478
       to_port     = 3478
       protocol    = "udp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -139,7 +161,7 @@ module "coturn_sg" {
       from_port   = 5349
       to_port     = 5349
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -149,7 +171,17 @@ module "coturn_sg" {
       from_port   = 5349
       to_port     = 5349
       protocol    = "udp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
+      ]
+    },
+    {
+      description = "Allow traffic for Prometheus"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -159,7 +191,7 @@ module "coturn_sg" {
       from_port   = 49152
       to_port     = 65535
       protocol    = "udp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -169,7 +201,7 @@ module "coturn_sg" {
       from_port   = 49152
       to_port     = 65535
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.coturn_nlb_sg.security_group_id}" # Allow traffic from Coturn NLB security group
       ]
@@ -249,7 +281,17 @@ module "sygnal_sg" {
       from_port   = 5000
       to_port     = 5000
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.sygnal_alb_sg.security_group_id}" # Allow traffic from Sygnal's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for Prometheus"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
         "${module.sygnal_alb_sg.security_group_id}" # Allow traffic from Sygnal's ALB security group
       ]
