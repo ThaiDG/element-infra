@@ -21,9 +21,9 @@ ufw --force enable
 
 # Install Docker
 apt-get install -y \
-    docker.io \
-    unzip \
-    curl
+  docker.io \
+  unzip \
+  curl
 
 # Install AWS CLI if not already installed
 if ! command -v aws >/dev/null 2>&1; then
@@ -74,15 +74,15 @@ mkdir -p "$APP_DIR" && cd "$APP_DIR"
 echo "Creating docker-compose.yaml..."
 cat <<EOL > docker-compose.yaml
 services:
-    element:
-        image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/element-web:latest
-        container_name: element-web
-        restart: always
-        ports:
-            - "80:80"
-        volumes:
-            - ./element/config.$ELEMENT_DNS.json:/app/config.$ELEMENT_DNS.json
-            - ./element/data:/app/data
+  element:
+    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/element-web:latest
+    container_name: element-web
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./element/config.$ELEMENT_DNS.json:/app/config.$ELEMENT_DNS.json
+      - ./element/data:/app/data
 EOL
 
 # Step 3: Create folders for element
@@ -94,29 +94,29 @@ mkdir -p element/{config,data}
 echo "Creating config.json..."
 cat <<EOL > element/config.$ELEMENT_DNS.json
 {
-    "default_server_config": {
-        "m.homeserver": {
-            "base_url": "https://$SYNAPSE_DNS",
-            "server_name": "$SYNAPSE_DNS"
-        },
-        "m.identity_server": {
-            "base_url": "https://vector.im"
-        }
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://$SYNAPSE_DNS",
+      "server_name": "$SYNAPSE_DNS"
     },
-    "permalink_prefix": "https://$ELEMENT_DNS",
-    "default_country_code": "VN",
-    "brand": "TAP Media Chat",
-    "room_directory": {
-        "servers": [
-            "$SYNAPSE_DNS"
-        ]
-    },
-    "show_labs_settings": true,
-    "features": {
-        "feature_pinning": "labs"
-    },
-    "default_theme": "light",
-    "disable_guests": true
+    "m.identity_server": {
+      "base_url": "https://vector.im"
+    }
+  },
+  "permalink_prefix": "https://$ELEMENT_DNS",
+  "default_country_code": "VN",
+  "brand": "TAP Media Chat",
+  "room_directory": {
+    "servers": [
+      "$SYNAPSE_DNS"
+    ]
+  },
+  "show_labs_settings": true,
+  "features": {
+    "feature_pinning": "labs"
+  },
+  "default_theme": "light",
+  "disable_guests": true
 }
 EOL
 
