@@ -23,9 +23,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project = "element"
+      Project = "Yoush"
       Owner   = "ThaiDG"
-      Env     = "${var.workspace}"
+      Env     = var.workspace == "prod" ? "Production" : "${var.workspace}"
     }
   }
 }

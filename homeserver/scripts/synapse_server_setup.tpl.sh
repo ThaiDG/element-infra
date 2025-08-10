@@ -441,9 +441,6 @@ recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
 
 # Enable email verification
 disable_msisdn_registration: true
-# User required an email address to register and password reset
-registrations_require_3pid:
-  - email
 # Allows people to change their email address
 enable_3pid_changes: true
 email:
@@ -471,57 +468,30 @@ user_directory:
   exclude_remote_users: false
   show_locked_users: true
 
-# Enable Google OAuth
-# oidc_providers:
-#   - idp_id: google
-#     idp_name: Google
-#     idp_brand: "google"  # optional: styling hint for clients
-#     issuer: "https://accounts.google.com/"
-#     client_id: "<Google OAuth client ID>"
-#     client_secret: "<Google OAuth client secret>"
-#     scopes:
-#       - "openid"
-#       - "profile"
-#       - "email"
-#     allow_existing_users: true
-#     user_mapping_provider:
-#       config:
-#         localpart_template: "{{ user.given_name|lower }}"
-#         display_name_template: "{{ user.name }}"
-#         email_template: "{{ user.email }}" # needs "email" in scopes above
-
 # Enable features
-experimental_features:
-#  msc3861:
-#     enabled: true
-#     issuer: "https://accounts.google.com"
-#     client_id: "<Google OAuth client ID>"
-#     client_auth_method: client_secret_basic
-#     client_secret: "<Google OAuth client secret>"
-#     admin_token: $REGISTRATION_SECRET
+# experimental_features:
+# # Enable LiveKit for Element Call
+#   msc2967_enabled: true
+#   msc3266_enabled: true
+#   msc4222_enabled: true
+#   msc4140_enabled: true
 
-# Enable LiveKit for Element Call
-  msc2967_enabled: true
-  msc3266_enabled: true
-  msc4222_enabled: true
-  msc4140_enabled: true
-
-max_event_delay_duration: 24h
-rc_message:
-  per_second: 0.5
-  burst_count: 30
-rc_delayed_event_mgmt:
-  per_second: 1
-  burst_count: 20
+# max_event_delay_duration: 24h
+# rc_message:
+#   per_second: 0.5
+#   burst_count: 30
+# rc_delayed_event_mgmt:
+#   per_second: 1
+#   burst_count: 20
 
 # Add well-known client content
 serve_server_wellknown: true
-extra_well_known_client_content:
-  org.matrix.msc4143.rtc_foci:
-    - type: "livekit"
-      livekit_service_url: "https://$SYNAPSE_DNS"
-    - type: "nextgen_new_foci_type"
-      props_for_nextgen_foci: "val"
+# extra_well_known_client_content:
+#   org.matrix.msc4143.rtc_foci:
+#     - type: "livekit"
+#       livekit_service_url: "https://$SYNAPSE_DNS"
+#     - type: "nextgen_new_foci_type"
+#       props_for_nextgen_foci: "val"
 
 
 # vim:ft=yaml

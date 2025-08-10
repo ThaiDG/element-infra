@@ -1,7 +1,7 @@
 module "synapse_route53_record" {
   source          = "./modules/Route53/Record/A"
   zone_id         = data.aws_route53_zone.main.id
-  record_name     = "matrix.${var.root_domain}"
+  record_name     = "yoush.${var.root_domain}"
   aws_lb_dns_name = aws_lb.synapse_alb.dns_name
   aws_lb_zone_id  = aws_lb.synapse_alb.zone_id
 }

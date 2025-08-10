@@ -13,7 +13,7 @@ $baseDomain = "tapofthink.com"
 $workspaceDomains = @{
     "dev" = "dev.$baseDomain"
     "staging" = "staging.$baseDomain"
-    "prod" = "social.$baseDomain"
+    "prod" = "chat.$baseDomain"
 }
 
 # Run Terraform action
