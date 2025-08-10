@@ -24,7 +24,8 @@ module "synapse_lt" {
   security_group_ids = [
     module.synapse_sg.security_group_id,
     data.terraform_remote_state.database.outputs.database_sg_id,
-    module.ssh_sg.security_group_id
+    module.ssh_sg.security_group_id,
+    data.terraform_remote_state.vpc.outputs.client_vpn_sg_id,
   ]
 
   tags = {

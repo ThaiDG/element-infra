@@ -52,7 +52,9 @@ module "coturn_tcp_lt" {
   volume_size   = 8
   security_group_ids = [
     module.coturn_sg.security_group_id,
-    module.ssh_sg.security_group_id
+    module.efs_sg.security_group_id,
+    module.ssh_sg.security_group_id,
+    data.terraform_remote_state.vpc.outputs.client_vpn_sg_id,
   ]
 
   tags = {
@@ -70,7 +72,9 @@ module "coturn_udp_lt" {
   volume_size   = 8
   security_group_ids = [
     module.coturn_sg.security_group_id,
-    module.ssh_sg.security_group_id
+    module.efs_sg.security_group_id,
+    module.ssh_sg.security_group_id,
+    data.terraform_remote_state.vpc.outputs.client_vpn_sg_id,
   ]
 
   tags = {
