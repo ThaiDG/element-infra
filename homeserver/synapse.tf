@@ -5,7 +5,7 @@ data "template_file" "synapse_init" {
     synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
     coturn_tcp_dns = "${module.coturn_tcp_route53_record.record_dns_name}"
     coturn_udp_dns = "${module.coturn_udp_route53_record.record_dns_name}"
-    element_dns    = "${module.element_route53_record.record_dns_name}"
+    tapyoush_dns   = "${module.web_tapyoush_route53_record.record_dns_name}"
     sygnal_dns     = "${module.sygnal_route53_record.record_dns_name}"
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
     aws_region     = "${data.aws_region.current.region}"

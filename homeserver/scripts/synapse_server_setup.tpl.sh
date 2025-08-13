@@ -5,7 +5,7 @@ set -e
 SYNAPSE_DNS="${synapse_dns}"
 COTURN_TCP_DNS="${coturn_tcp_dns}"
 COTURN_UDP_DNS="${coturn_udp_dns}"
-ELEMENT_DNS="${element_dns}"
+TAPYOUSH_DNS="${tapyoush_dns}"
 SYGNAL_DNS="${sygnal_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
@@ -423,7 +423,7 @@ turn_allow_guests: true
 
 public_baseurl: "https://$SYNAPSE_DNS"
 default_identity_server: "https://vector.im"
-web_client_location: "https://$ELEMENT_DNS"
+web_client_location: "https://$TAPYOUSH_DNS"
 
 # Push notifications to Sygnal
 push:

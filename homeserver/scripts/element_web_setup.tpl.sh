@@ -3,7 +3,8 @@ set -e
 
 # Interpolating by Terraform template_file data
 SYNAPSE_DNS="${synapse_dns}"
-ELEMENT_DNS="${element_dns}"
+TAPYOUSH_DNS="${tapyoush_dns}"
+YOUSHTAP_DNS="${youshtap_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
 
@@ -82,7 +83,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./element/config.$ELEMENT_DNS.json:/app/config.$ELEMENT_DNS.json
+      - ./element/config.$TAPYOUSH_DNS.json:/app/config.$TAPYOUSH_DNS.json
+      - ./element/config.$YOUSHTAP_DNS.json:/app/config.$YOUSHTAP_DNS.json
       - ./element/data:/app/data
 
   blackbox:
@@ -112,8 +114,8 @@ mkdir -p prometheus
 
 # Step 4: Create config.json
 # Must investigate to create our own identity server instead of using vector.im
-echo "Creating config.json..."
-cat <<EOL > element/config.$ELEMENT_DNS.json
+echo "Creating config.$TAPYOUSH_DNS.json..."
+cat <<EOL > element/config.$TAPYOUSH_DNS.json
 {
   "default_server_config": {
     "m.homeserver": {
@@ -124,7 +126,36 @@ cat <<EOL > element/config.$ELEMENT_DNS.json
       "base_url": "https://vector.im"
     }
   },
-  "permalink_prefix": "https://$ELEMENT_DNS",
+  "permalink_prefix": "https://$TAPYOUSH_DNS",
+  "default_country_code": "VN",
+  "brand": "TAP Media Chat",
+  "room_directory": {
+    "servers": [
+      "$SYNAPSE_DNS"
+    ]
+  },
+  "show_labs_settings": true,
+  "features": {
+    "feature_pinning": "labs"
+  },
+  "default_theme": "light",
+  "disable_guests": true
+}
+EOL
+
+echo "Creating config.$YOUSHTAP_DNS.json..."
+cat <<EOL > element/config.$YOUSHTAP_DNS.json
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://$SYNAPSE_DNS",
+      "server_name": "$SYNAPSE_DNS"
+    },
+    "m.identity_server": {
+      "base_url": "https://vector.im"
+    }
+  },
+  "permalink_prefix": "https://$YOUSHTAP_DNS",
   "default_country_code": "VN",
   "brand": "TAP Media Chat",
   "room_directory": {
@@ -166,7 +197,8 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-        - https://$ELEMENT_DNS
+        - https://$TAPYOUSH_DNS
+        - https://$YOUSHTAP_DNS
         - https://$SYNAPSE_DNS
     relabel_configs:
       - source_labels: [__address__]

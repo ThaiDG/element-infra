@@ -3,7 +3,8 @@ data "template_file" "element_init" {
 
   vars = {
     synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
-    element_dns    = "${module.element_route53_record.record_dns_name}"
+    tapyoush_dns   = "${module.web_tapyoush_route53_record.record_dns_name}"
+    youshtap_dns   = "${module.web_youshtap_route53_record.record_dns_name}"
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
     aws_region     = "${data.aws_region.current.region}"
   }
