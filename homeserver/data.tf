@@ -36,7 +36,7 @@ data "aws_acm_certificate" "default" {
 }
 
 data "aws_acm_certificate" "web_cert_tapyoush" {
-  domain   = "*.tapyoush.com"
+  domain   = var.workspace == "prod" ? "tapyoush.com" : "*.tapyoush.com"
   statuses = ["ISSUED"]
 }
 
@@ -46,7 +46,7 @@ data "aws_route53_zone" "tapyoush" {
 }
 
 data "aws_acm_certificate" "web_cert_youshtap" {
-  domain   = "*.youshtap.com"
+  domain   = var.workspace == "prod" ? "youshtap.com" : "*.youshtap.com"
   statuses = ["ISSUED"]
 }
 
