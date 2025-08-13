@@ -428,7 +428,6 @@ web_client_location: "https://$TAPYOUSH_DNS"
 # Push notifications to Sygnal
 push:
   enabled: true
-  gateway_url: "https://$SYGNAL_DNS/_matrix/push/v1/notify"
 
 # Registration settings
 enable_registration: true
@@ -443,22 +442,6 @@ recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
 disable_msisdn_registration: true
 # Allows people to change their email address
 enable_3pid_changes: true
-email:
-  smtp_host: "smtp.gmail.com"
-  smtp_port: 587
-  smtp_user: "$SMTP_USER"
-  smtp_pass: "$SMTP_PASS"
-  force_tls: false
-  require_transport_security: true
-  enable_tls: true
-  tlsname: smtp.gmail.com
-  app_name: "TAP Media Chat"
-  notif_from: "%(app)s <noreply@$SYNAPSE_DNS>"
-  enable_notifs: true
-  notif_for_new_users: false
-  subjects:
-    password_reset: '[%(app)s] Password reset'
-    email_validation: '[%(app)s] Validate your email'
 
 # Allows searching of all users in directory
 user_directory:

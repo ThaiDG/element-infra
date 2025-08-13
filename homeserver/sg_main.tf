@@ -49,30 +49,20 @@ module "synapse_alb_sg" {
 
   ingress_rules = [
     {
-      description = "Allow traffic for Synapse ALB"
-      from_port   = 443
-      to_port     = 443
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"] # Allow all traffic for Synapse ALB
-      security_groups = [
-        "${module.element_sg.security_group_id}",     # Allow traffic from Element security group
-        "${module.element_alb_sg.security_group_id}", # Allow traffic from Element ALB security group
-        "${module.coturn_sg.security_group_id}",      # Allow traffic from Coturn security group
-        "${module.coturn_nlb_sg.security_group_id}",  # Allow traffic from Coturn NLB security group
-      ]
+      description     = "Allow traffic for Synapse ALB"
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"] # Allow all traffic for Synapse ALB
+      security_groups = []
     },
     {
-      description = "Allow traffic for Synapse Federation ALB"
-      from_port   = 8448
-      to_port     = 8448
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"] # Allow Federation traffic
-      security_groups = [
-        "${module.element_sg.security_group_id}",     # Allow traffic from Element security group
-        "${module.element_alb_sg.security_group_id}", # Allow traffic from Element ALB security group
-        "${module.coturn_sg.security_group_id}",      # Allow traffic from Coturn security group
-        "${module.coturn_nlb_sg.security_group_id}",  # Allow traffic from Coturn NLB security group
-      ]
+      description     = "Allow traffic for Synapse Federation ALB"
+      from_port       = 8448
+      to_port         = 8448
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"] # Allow Federation traffic
+      security_groups = []
     }
   ]
 }
@@ -311,7 +301,7 @@ module "sygnal_alb_sg" {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
-      cidr_blocks = []
+      cidr_blocks = ["0.0.0.0/0"]
       security_groups = [
         "${module.synapse_sg.security_group_id}" # Allow traffic from Synapse security group
       ]
