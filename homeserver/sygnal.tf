@@ -4,6 +4,7 @@ data "template_file" "sygnal_init" {
   vars = {
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
     aws_region     = "${data.aws_region.current.region}"
+    log_level      = var.workspace == "prod" ? "INFO" : "DEBUG"
   }
 }
 

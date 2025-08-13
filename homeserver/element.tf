@@ -49,12 +49,18 @@ module "web_target" {
   target_group_protocol              = "HTTP"
   target_group_vpc_id                = data.terraform_remote_state.vpc.outputs.vpc_id
   target_group_health_check_enabled  = true
-  target_group_health_check_path     = "/config.json"
+  target_group_health_check_path     = "/config.${module.web_tapyoush_route53_record.record_dns_name}.json"
   target_group_health_check_port     = "80"
   target_group_health_check_protocol = "HTTP"
   listener_port                      = 443
   listener_protocol                  = "HTTPS"
-  certificate_arn                    = data.aws_acm_certificate.default.arn
+  certificate_arn                    = data.aws_acm_certificate.web_cert_tapyoush.arn
+}
+
+# Additional cert for youshtap.com
+resource "aws_lb_listener_certificate" "web_additional_cert" {
+  listener_arn    = module.web_target.listener_arn
+  certificate_arn = data.aws_acm_certificate.web_cert_youshtap.arn
 }
 
 # Routing the Prometheus port
@@ -70,7 +76,13 @@ module "web_prometheus_target" {
   target_group_health_check_protocol = "HTTP"
   listener_port                      = 9090
   listener_protocol                  = "HTTPS"
-  certificate_arn                    = data.aws_acm_certificate.default.arn
+  certificate_arn                    = data.aws_acm_certificate.web_cert_tapyoush.arn
+}
+
+# Additional cert for youshtap.com
+resource "aws_lb_listener_certificate" "prometheus_additional_cert" {
+  listener_arn    = module.web_prometheus_target.listener_arn
+  certificate_arn = data.aws_acm_certificate.web_cert_youshtap.arn
 }
 
 module "element_asg" {

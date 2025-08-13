@@ -35,6 +35,26 @@ data "aws_acm_certificate" "default" {
   statuses = ["ISSUED"]
 }
 
+data "aws_acm_certificate" "web_cert_tapyoush" {
+  domain   = "*.tapyoush.com"
+  statuses = ["ISSUED"]
+}
+
+data "aws_route53_zone" "tapyoush" {
+  name         = "tapyoush.com"
+  private_zone = false
+}
+
+data "aws_acm_certificate" "web_cert_youshtap" {
+  domain   = "*.youshtap.com"
+  statuses = ["ISSUED"]
+}
+
+data "aws_route53_zone" "youshtap" {
+  name         = "youshtap.com"
+  private_zone = false
+}
+
 data "aws_route53_zone" "main" {
   name         = var.root_domain
   private_zone = false

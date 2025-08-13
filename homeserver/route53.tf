@@ -8,7 +8,7 @@ module "synapse_route53_record" {
 
 module "web_tapyoush_route53_record" {
   source          = "./modules/Route53/Record/A"
-  zone_id         = data.aws_route53_zone.main.id
+  zone_id         = data.aws_route53_zone.tapyoush.id
   record_name     = var.workspace == "prod" ? "tapyoush.com" : "${var.workspace}.tapyoush.com"
   aws_lb_dns_name = aws_lb.element_alb.dns_name
   aws_lb_zone_id  = aws_lb.element_alb.zone_id
@@ -16,7 +16,7 @@ module "web_tapyoush_route53_record" {
 
 module "web_youshtap_route53_record" {
   source          = "./modules/Route53/Record/A"
-  zone_id         = data.aws_route53_zone.main.id
+  zone_id         = data.aws_route53_zone.youshtap.id
   record_name     = var.workspace == "prod" ? "youshtap.com" : "${var.workspace}.youshtap.com"
   aws_lb_dns_name = aws_lb.element_alb.dns_name
   aws_lb_zone_id  = aws_lb.element_alb.zone_id
