@@ -4,6 +4,7 @@ set -e
 # Interpolating by Terraform template_file data
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
+LOG_LEVEL="${log_level}"
 
 # Define constants
 APP_DIR="/app"
@@ -69,32 +70,24 @@ docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION
 # Fetching credentials from SSM
 echo "🔐 Fetching credentials from SSM..."
 # APNs credentials
-TEAM_ID=$(aws ssm get-parameter \
-  --name "/sygnal/apns/team_id" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-KEY_ID=$(aws ssm get-parameter \
-  --name "/sygnal/apns/key_id" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-AUTHKEY=$(aws ssm get-parameter \
-  --name "/sygnal/apns/auth_key_$KEY_ID" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
 BUNDLE_ID=$(aws ssm get-parameter \
   --name "/sygnal/apns/bundle_id" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+APNS_CERT=$(aws ssm get-parameter \
+  --name "/sygnal/apns/apns_cert" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
+VOIP_CERT=$(aws ssm get-parameter \
+  --name "/sygnal/apns/voip_cert" \
   --with-decryption \
   --region "$AWS_REGION" \
   --query 'Parameter.Value' \
@@ -163,12 +156,16 @@ services:
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
 EOF
 
-cat <<EOF > sygnal/AuthKey_$KEY_ID.p8
-$AUTHKEY
-EOF
-
 cat <<EOF > sygnal/$PROJECT_ID-firebase-adminsdk.json
 $FIREBASE_ADMINSDK_JSON
+EOF
+
+cat <<EOF > sygnal/apns_cert.pem
+$APNS_CERT
+EOF
+
+cat <<EOF > sygnal/voip_cert.pem
+$VOIP_CERT
 EOF
 
 cat <<EOF > sygnal/sygnal.yaml
@@ -215,14 +212,15 @@ log:
       # sygnal contains log lines from Sygnal itself.
       # You can comment out this section to fall back to the root logger.
       #
-      # sygnal:
-      #   propagate: false
-      #   handlers: ["stderr", "stdout", "file"]
+      sygnal:
+        propagate: false
+        handlers: ["stderr", "stdout"]
+        level: "$LOG_LEVEL"
 
     root:
       # Specify the handler(s) to send log messages to.
       handlers: ["stderr", "stdout"]
-      level: "INFO"
+      level: "$LOG_LEVEL"
 
     disable_existing_loggers: false
 
@@ -252,14 +250,17 @@ metrics:
 apps:
   # This is an example APNs push configuration
   #
-  $BUNDLE_ID.ios.prod:
+  # APNs with cert file
+  $BUNDLE_ID:
     type: apns
-    # Authentication
-    keyfile: /sygnal/AuthKey_$KEY_ID.p8
-    key_id: $KEY_ID
-    team_id: $TEAM_ID
+    certfile: /sygnal/apns_cert.pem
+    platform: production
+
+  $BUNDLE_ID.voip:
+    type: apns
+    certfile: /sygnal/voip_cert.pem
     topic: $BUNDLE_ID
-    inflight_request_limit: 512
+    platform: production
 
   # This is an example GCM/FCM push configuration.
   #
