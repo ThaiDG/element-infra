@@ -157,7 +157,7 @@ cat <<EOL > element/config.$YOUSHTAP_DNS.json
   },
   "permalink_prefix": "https://$YOUSHTAP_DNS",
   "default_country_code": "VN",
-  "brand": "TAP Media Chat",
+  "brand": "Yoush",
   "room_directory": {
     "servers": [
       "$SYNAPSE_DNS"
