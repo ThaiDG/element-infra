@@ -15,6 +15,7 @@ SYNAPSE_VERSION="${synapse_version}"
 # Define constants
 APP_DIR="/app"
 POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
+MAX_BODY_SIZE="500M"
 
 # Update and upgrade the system
 apt-get update && apt-get upgrade -y
@@ -275,6 +276,8 @@ http {
         listen 80;
         server_name $SYNAPSE_DNS;
 
+        client_max_body_size $MAX_BODY_SIZE;
+
         # Synapse endpoints
         location ~ ^(/_matrix/|/.well-known/|/health) {
             proxy_pass http://synapse:8008;
@@ -392,7 +395,7 @@ suppress_key_server_warning: true
 # Custom configurations
 
 # Increase the maximum upload size
-max_upload_size: 100M
+max_upload_size: $MAX_BODY_SIZE
 
 # Enable TURN server
 turn_uris:
