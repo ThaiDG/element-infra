@@ -19,7 +19,6 @@ module "sygnal_lt" {
   security_group_ids = [
     module.sygnal_sg.security_group_id,
     module.ssh_sg.security_group_id,
-    data.terraform_remote_state.vpc.outputs.client_vpn_sg_id,
   ]
 
   tags = {

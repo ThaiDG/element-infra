@@ -22,7 +22,6 @@ module "element_lt" {
   security_group_ids = [
     module.element_sg.security_group_id,
     module.ssh_sg.security_group_id,
-    data.terraform_remote_state.vpc.outputs.client_vpn_sg_id,
   ]
 
   tags = {
