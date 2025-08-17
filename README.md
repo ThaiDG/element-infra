@@ -33,14 +33,10 @@ If you don't want to specific the OS for every make command then follow the belo
 
 ### SSM Parameter Store
 
-- SMTP Server:
-  - /smtp/user
-  - /smtp/pass
 - Apple Push Notification service (APNs):
-  - /sygnal/apns/team_id
-  - /sygnal/apns/key_id
-  - /sygnal/apns/auth_key_`key_id`
   - /sygnal/apns/bundle_id
+  - /sygnal/apns/apns_cert
+  - /sygnal/apns/voip_cert
 - Google Cloud Messaging/Firebase Cloud Messaging (GCM/FCM):
   - /sygnal/gcm/package-name
   - /sygnal/gcm/project-id

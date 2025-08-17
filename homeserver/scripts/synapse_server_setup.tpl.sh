@@ -223,24 +223,6 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
-
-  # postgres:
-  #   image: postgres:14
-  #   restart: always
-  #   volumes:
-  #     - ./postgres/data:/var/lib/postgresql/data
-  #     - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-  #   environment:
-  #     - POSTGRES_USER=$${POSTGRES_USER}
-  #     - POSTGRES_PASSWORD=$${POSTGRES_PASSWORD}
-  #     - POSTGRES_DB=$${POSTGRES_DB}
-  #   ports:
-  #     - "127.0.0.1:5432:5432"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${SYNAPSE_DB}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 3
 EOF
 
 # Create .env file
