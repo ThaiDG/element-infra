@@ -10,7 +10,7 @@ data "template_file" "synapse_init" {
     aws_account_id  = "${data.aws_caller_identity.current.account_id}"
     aws_region      = "${data.aws_region.current.region}"
     postgres_dns    = "${data.terraform_remote_state.database.outputs.database_dns}"
-    synapse_version = "${var.synapse_release_version}"
+    synapse_version = var.workspace == "prod" ? var.synapse_release_version : "latest"
     s3_bucket_name  = "${aws_s3_bucket.synapse_storage.id}"
   }
 }

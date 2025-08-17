@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "synapse_storage" {
-  bucket_prefix = "${var.workspace}-synapse-storage"
+  bucket_prefix = "${var.workspace}-synapse-storage-"
   force_destroy = true
 }
 
@@ -24,10 +24,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "archive_policy" {
       storage_class = "GLACIER"
     }
   }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "expire_noncurrent_versions" {
-  bucket = aws_s3_bucket.synapse_storage.id
 
   rule {
     id     = "expire-noncurrent-versions"
