@@ -8,6 +8,9 @@ resource "aws_autoscaling_group" "autoscaling_group_template" {
   health_check_type   = var.asg_health_check_type
   enabled_metrics     = ["GroupDesiredCapacity"]
 
+  # Since Synapse instance need a little time to warm up
+  default_instance_warmup = 500
+
   launch_template {
     id      = var.launch_template_id
     version = "$Default"
