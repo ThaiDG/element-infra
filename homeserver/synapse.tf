@@ -11,6 +11,7 @@ data "template_file" "synapse_init" {
     aws_region      = "${data.aws_region.current.region}"
     postgres_dns    = "${data.terraform_remote_state.database.outputs.database_dns}"
     synapse_version = "${var.synapse_release_version}"
+    s3_bucket_name  = "${aws_s3_bucket.synapse_storage.id}"
   }
 }
 

@@ -11,6 +11,7 @@ AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
 POSTGRES_DNS="${postgres_dns}"
 SYNAPSE_VERSION="${synapse_version}"
+S3_BUCKET_NAME="${s3_bucket_name}"
 
 # Define constants
 APP_DIR="/app"
@@ -396,6 +397,15 @@ suppress_key_server_warning: true
 
 # Increase the maximum upload size
 max_upload_size: $MAX_BODY_SIZE
+media_storage_providers:
+  - module: s3_storage_provider.S3StorageProviderBackend
+    store_local: False
+    store_remote: True
+    store_synchronous: True
+    config:
+      bucket: "$S3_BUCKET_NAME"
+      region_name: "$AWS_REGION"
+      endpoint_url: "https://s3.amazonaws.com"
 
 # Enable TURN server
 turn_uris:
