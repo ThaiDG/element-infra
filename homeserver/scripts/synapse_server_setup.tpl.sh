@@ -10,6 +10,7 @@ SYGNAL_DNS="${sygnal_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
 POSTGRES_DNS="${postgres_dns}"
+SYNAPSE_VERSION="${synapse_version}"
 
 # Define constants
 APP_DIR="/app"
@@ -163,7 +164,7 @@ cd "$APP_DIR"
 cat <<'EOF' > docker-compose.yaml
 services:
   synapse:
-    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:latest
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:$${SYNAPSE_VERSION}
     container_name: synapse
     restart: always
     # depends_on:

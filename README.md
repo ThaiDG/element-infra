@@ -74,3 +74,7 @@ If you don't want to specific the OS for every make command then follow the belo
   8. Guide for docker compose command:
       - Check whether the instance is healthy: `docker compose ps`
       - In the command above, we can see the container name, use it to check the log of the specific service: `docker compose logs -f <container_name>`
+
+## Release Note
+
+- Change the release version in the `homeserver/variables.tf` before run the make apply command

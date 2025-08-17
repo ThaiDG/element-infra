@@ -2,14 +2,15 @@ data "template_file" "synapse_init" {
   template = file("${path.module}/scripts/synapse_server_setup.tpl.sh")
 
   vars = {
-    synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
-    coturn_tcp_dns = "${module.coturn_tcp_route53_record.record_dns_name}"
-    coturn_udp_dns = "${module.coturn_udp_route53_record.record_dns_name}"
-    tapyoush_dns   = "${module.web_tapyoush_route53_record.record_dns_name}"
-    sygnal_dns     = "${module.sygnal_route53_record.record_dns_name}"
-    aws_account_id = "${data.aws_caller_identity.current.account_id}"
-    aws_region     = "${data.aws_region.current.region}"
-    postgres_dns   = "${data.terraform_remote_state.database.outputs.database_dns}"
+    synapse_dns     = "${module.synapse_route53_record.record_dns_name}"
+    coturn_tcp_dns  = "${module.coturn_tcp_route53_record.record_dns_name}"
+    coturn_udp_dns  = "${module.coturn_udp_route53_record.record_dns_name}"
+    tapyoush_dns    = "${module.web_tapyoush_route53_record.record_dns_name}"
+    sygnal_dns      = "${module.sygnal_route53_record.record_dns_name}"
+    aws_account_id  = "${data.aws_caller_identity.current.account_id}"
+    aws_region      = "${data.aws_region.current.region}"
+    postgres_dns    = "${data.terraform_remote_state.database.outputs.database_dns}"
+    synapse_version = "${var.synapse_release_version}"
   }
 }
 

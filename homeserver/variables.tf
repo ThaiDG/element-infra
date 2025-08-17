@@ -13,3 +13,13 @@ variable "workspace" {
     error_message = "Workspace must be one of: dev, staging, prod."
   }
 }
+
+variable "web_release_version" {
+  description = "Yoush Web release version - Production only - Must change before release"
+  default     = "latest"
+}
+
+variable "synapse_release_version" {
+  description = "Synapse release version - Production only - Must change before release"
+  default     = "latest"
+}

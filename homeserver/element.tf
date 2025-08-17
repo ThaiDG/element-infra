@@ -7,6 +7,7 @@ data "template_file" "element_init" {
     youshtap_dns   = "${module.web_youshtap_route53_record.record_dns_name}"
     aws_account_id = "${data.aws_caller_identity.current.account_id}"
     aws_region     = "${data.aws_region.current.region}"
+    web_version    = var.workspace == "prod" ? var.web_release_version : "latest"
   }
 }
 

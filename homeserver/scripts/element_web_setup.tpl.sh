@@ -7,6 +7,7 @@ TAPYOUSH_DNS="${tapyoush_dns}"
 YOUSHTAP_DNS="${youshtap_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
+WEB_VERSION="${web_version}"
 
 # Define constants
 APP_DIR="/app"
@@ -77,7 +78,7 @@ echo "Creating docker-compose.yaml..."
 cat <<EOL > docker-compose.yaml
 services:
   element:
-    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/element-web:latest
+    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/element-web:$WEB_VERSION
     container_name: element-web
     restart: always
     ports:
