@@ -33,7 +33,8 @@ ufw --force enable
 apt-get install -y \
   docker.io \
   unzip \
-  curl
+  curl \
+  s3fs
 
 # Install AWS CLI if not already installed
 if ! command -v aws >/dev/null 2>&1; then
@@ -169,8 +170,6 @@ services:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:$${SYNAPSE_VERSION}
     container_name: synapse
     restart: always
-    # depends_on:
-    #   - postgres
     volumes:
       - ./synapse/data:/data
       - ./synapse/config:/config
@@ -398,15 +397,6 @@ suppress_key_server_warning: true
 
 # Increase the maximum upload size
 max_upload_size: $MAX_BODY_SIZE
-media_storage_providers:
-  - module: s3_storage_provider.S3StorageProviderBackend
-    store_local: False
-    store_remote: True
-    store_synchronous: True
-    config:
-      bucket: "$S3_BUCKET_NAME"
-      region_name: "$AWS_REGION"
-      endpoint_url: "https://s3.amazonaws.com"
 
 # Enable TURN server
 turn_uris:
@@ -477,8 +467,36 @@ serve_server_wellknown: true
 # vim:ft=yaml
 EOF
 
+# ─── Configure and Mount S3FS ────────────────────────────────────────────
+
+# Create the media_store mount point under app directory
+mkdir -p $APP_DIR/synapse/data/media_store
+
+# Ensure permissions allow the container (or any user) to access it
+chown root:root $APP_DIR/synapse/data/media_store
+chmod 755 $APP_DIR/synapse/data/media_store
+
+# Append an fstab entry so the bucket auto-mounts on reboot
+echo "s3fs#$S3_BUCKET_NAME $APP_DIR/synapse/data/media_store fuse \
+  _netdev,allow_other,use_path_request_style,\
+url=https://s3.$AWS_REGION.amazonaws.com,iam_role=auto,nonempty,\
+mp_umask=0000 0 0" \
+  >> /etc/fstab
+
+# Mount all filesystems (including our new s3fs entry)
+mount -a
+
+# Verify the mount succeeded
+if ! mountpoint -q $APP_DIR/synapse/data/media_store; then
+  echo "❌ ERROR: s3fs mount failed for bucket $S3_BUCKET_NAME"
+  exit 1
+else
+  echo "✅ s3fs mounted $S3_BUCKET_NAME -> $APP_DIR/synapse/data/media_store"
+fi
+# ──────────────────────────────────────────────────────────────────────────
+
 # Start services
-echo "Starting Synapse and Postgres services..."
+echo "Starting Synapse and related services..."
 docker compose up --wait --force-recreate
 
 echo "Synapse server setup completed successfully."
