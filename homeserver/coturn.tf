@@ -49,7 +49,7 @@ module "coturn_tcp_lt" {
   instance_type = "t3.medium"
   user_data     = data.template_file.coturn_tcp_init.rendered
   instance_name = "${var.workspace}-coturn-tcp"
-  volume_size   = 8
+  volume_size   = 16
   security_group_ids = [
     module.coturn_sg.security_group_id,
     module.efs_sg.security_group_id,
@@ -68,7 +68,7 @@ module "coturn_udp_lt" {
   instance_type = "t3.medium"
   user_data     = data.template_file.coturn_udp_init.rendered
   instance_name = "${var.workspace}-coturn-udp"
-  volume_size   = 8
+  volume_size   = 16
   security_group_ids = [
     module.coturn_sg.security_group_id,
     module.efs_sg.security_group_id,
