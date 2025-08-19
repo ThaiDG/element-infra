@@ -18,7 +18,7 @@ module "element_lt" {
   instance_type = "t3.medium"
   user_data     = data.template_file.element_init.rendered
   instance_name = "${var.workspace}-element-web"
-  volume_size   = 30
+  volume_size   = 16
   security_group_ids = [
     module.element_sg.security_group_id,
     module.ssh_sg.security_group_id,

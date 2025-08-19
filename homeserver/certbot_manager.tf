@@ -15,7 +15,7 @@ module "certbot_manager_lt" {
   image_id      = data.aws_ami.ubuntu_2404.id
   user_data     = data.template_file.certbot_init.rendered
   instance_name = "${var.workspace}-certbot-manager"
-  volume_size   = 8
+  volume_size   = 16
   security_group_ids = [
     module.efs_sg.security_group_id,
     module.ssh_sg.security_group_id,
