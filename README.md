@@ -55,6 +55,8 @@ If you don't want to specific the OS for every make command then follow the belo
 - ZeroSSL External Account Binding (EAB) - Using for coTURN SSL:
   - /zerossl/eab_kid
   - /zerossl/eab_hmac_key
+- CoTURN secret:
+  - /coturn/secret
 
 ## Additional Note
 
