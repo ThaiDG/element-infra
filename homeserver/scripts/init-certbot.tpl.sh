@@ -9,6 +9,8 @@ fi
 AWS_REGION="${region}"
 EFS_DIR="/mnt/certs"
 DOMAIN="${domain}"
+S3_BUCKET_NAME="767828741221-certbot"
+S3_DIR="/s3_mounted"
 
 # ------------------------------
 # 1. Install dependencies
@@ -22,7 +24,8 @@ apt-get install -y \
     python3-certbot-dns-route53 \
     unzip \
     curl \
-    nfs-common
+    nfs-common \
+    s3fs
 
 if ! command -v aws >/dev/null 2>&1; then
   echo "⚙️ AWS CLI not found — installing..."
@@ -41,6 +44,37 @@ mount \
   -t nfs \
   -o nfsvers=$NFS_VERSION,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport \
   $EFS_ID.efs.$AWS_REGION.amazonaws.com:/ $EFS_DIR
+
+# ─── Configure and Mount S3FS ────────────────────────────────────────────
+
+# Create the media_store mount point under app directory
+mkdir -p $S3_DIR
+
+# Ensure permissions allow the container (or any user) to access it
+chown root:root $S3_DIR
+chmod 755 $S3_DIR
+
+# Append an fstab entry so the bucket auto-mounts on reboot
+echo "s3fs#$S3_BUCKET_NAME $S3_DIR fuse \
+  _netdev,allow_other,use_path_request_style,\
+url=https://s3.$AWS_REGION.amazonaws.com,iam_role=auto,nonempty,\
+mp_umask=0000 0 0" \
+  >> /etc/fstab
+
+# Reload the systemd
+systemctl daemon-reload
+
+# Mount all filesystems (including our new s3fs entry)
+mount -a
+
+# Verify the mount succeeded
+if ! mountpoint -q $S3_DIR; then
+  echo "❌ ERROR: s3fs mount failed for bucket $S3_BUCKET_NAME"
+  exit 1
+else
+  echo "✅ s3fs mounted $S3_BUCKET_NAME -> $S3_DIR"
+fi
+# ──────────────────────────────────────────────────────────────────────────
 
 # ------------------------------
 # 2. Request cert via Route53 plugin
@@ -84,7 +118,7 @@ else
     --server https://acme.zerossl.com/v2/DV90 \
     --eab-kid "$EAB_KID" \
     --eab-hmac-key "$EAB_HMAC_KEY" \
-    -d "$DOMAIN" \
+    -d "*.$DOMAIN" \
     --agree-tos \
     --non-interactive \
     --email thaidg@tapofthink.com \
@@ -104,6 +138,8 @@ else
   echo "✅ Certificate successfully obtained."
 fi
 
+cp -r $EFS_DIR $S3_DIR
+echo "✅ Certificate files copied to $S3_DIR"
 
 # ------------------------------
 # 3. Setup renewal timer
