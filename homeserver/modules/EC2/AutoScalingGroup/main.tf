@@ -9,7 +9,7 @@ resource "aws_autoscaling_group" "autoscaling_group_template" {
   enabled_metrics     = ["GroupDesiredCapacity"]
 
   # Since Synapse instance need a little time to warm up
-  default_instance_warmup = 500
+  default_instance_warmup = 600
 
   launch_template {
     id      = var.launch_template_id
