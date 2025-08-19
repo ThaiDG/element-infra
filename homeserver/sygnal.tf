@@ -12,7 +12,7 @@ module "sygnal_lt" {
   source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-sygnal-service-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
-  instance_type = "t3.medium"
+  instance_type = "t3.small"
   user_data     = data.template_file.sygnal_init.rendered
   instance_name = "${var.workspace}-sygnal-service"
   volume_size   = 16
