@@ -64,8 +64,7 @@ sygnal-refresh:
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "sygnal-service"
 
 coturn-refresh:
-	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn-tcp"
-	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn-udp"
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn"
 
 element-refresh:
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "element-web"

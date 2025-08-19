@@ -2,10 +2,8 @@ data "template_file" "certbot_init" {
   template = file("${path.module}/scripts/init-certbot.tpl.sh")
 
   vars = {
-    efs_id      = module.efs.efs_id
-    nfs_version = "4.1" # Default NFS version
-    region      = data.aws_region.current.region
-    domain      = "${var.root_domain}" # Wildcard domain for certbot
+    region = data.aws_region.current.region
+    domain = "${var.root_domain}" # Wildcard domain for certbot
   }
 }
 
@@ -17,7 +15,6 @@ module "certbot_manager_lt" {
   instance_name = "${var.workspace}-certbot-manager"
   volume_size   = 16
   security_group_ids = [
-    module.efs_sg.security_group_id,
     module.ssh_sg.security_group_id,
     data.terraform_remote_state.database.outputs.database_sg_id
   ]
@@ -37,7 +34,7 @@ module "certbot_asg" {
   instance_name        = "${var.workspace}-certbot-manager"
 
   asg_subnet_ids = [
-    data.terraform_remote_state.vpc.outputs.public_subnet_ids[0] # Ensure this matches the EFS subnet
+    data.terraform_remote_state.vpc.outputs.public_subnet_ids[0]
   ]
 
   depends_on = [

@@ -309,24 +309,6 @@ module "sygnal_alb_sg" {
   ]
 }
 
-# ---------------- EFS SECURITY GROUP ----------------
-module "efs_sg" {
-  source                     = "./modules/EC2/SecurityGroup"
-  security_group_name_prefix = "${var.workspace}-efs-security-group"
-  security_group_description = "Allow NFS traffic for EFS"
-  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
-
-  ingress_rules = [
-    {
-      description = "Allow NFS traffic from VPC CIDR"
-      from_port   = 2049
-      to_port     = 2049
-      protocol    = "tcp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"] # VPC CIDR block
-    }
-  ]
-}
-
 # ---------------- SSH SECURITY GROUP ----------------
 module "ssh_sg" {
   source                     = "./modules/EC2/SecurityGroup"

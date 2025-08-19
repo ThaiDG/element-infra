@@ -24,8 +24,6 @@ data "template_file" "coturn_init" {
   vars = {
     tcp_nlb_dns = aws_lb.coturn_nlb_tcp.dns_name
     udp_nlb_dns = aws_lb.coturn_nlb_udp.dns_name
-    efs_id      = module.efs.efs_id
-    nfs_version = "4.1" # Default NFS version
     region      = data.aws_region.current.region
     root_domain = var.root_domain
   }
@@ -41,7 +39,6 @@ module "coturn_lt" {
   volume_size   = 16
   security_group_ids = [
     module.coturn_sg.security_group_id,
-    module.efs_sg.security_group_id,
     module.ssh_sg.security_group_id,
   ]
 

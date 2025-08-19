@@ -18,11 +18,6 @@ output "coturn_nlb_udp_dns" {
   value       = aws_lb.coturn_nlb_udp.dns_name
 }
 
-output "efs_id" {
-  description = "EFS ID for storing certificates"
-  value       = module.efs.efs_id
-}
-
 output "ami_id" {
   description = "AMI ID used for the instances"
   value       = data.aws_ami.ubuntu_2404.id

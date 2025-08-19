@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-EFS_ID="${efs_id}"
-NFS_VERSION="${nfs_version}"
-if [ -z "$NFS_VERSION" ]; then
-  NFS_VERSION="4.1"
-fi
 AWS_REGION="${region}"
-EFS_DIR="/mnt/certs"
 DOMAIN="${domain}"
 S3_BUCKET_NAME="767828741221-certbot"
 S3_DIR="/s3_mounted"
@@ -24,7 +18,6 @@ apt-get install -y \
     python3-certbot-dns-route53 \
     unzip \
     curl \
-    nfs-common \
     s3fs
 
 if ! command -v aws >/dev/null 2>&1; then
@@ -35,15 +28,6 @@ if ! command -v aws >/dev/null 2>&1; then
 else
   echo "✅ AWS CLI is already installed!"
 fi
-
-# Create EFS mount directory
-mkdir -p $EFS_DIR
-# Mount EFS
-echo "🔗 Mounting EFS $EFS_ID to $EFS_DIR"
-mount \
-  -t nfs \
-  -o nfsvers=$NFS_VERSION,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport \
-  $EFS_ID.efs.$AWS_REGION.amazonaws.com:/ $EFS_DIR
 
 # ─── Configure and Mount S3FS ────────────────────────────────────────────
 
@@ -80,7 +64,7 @@ fi
 # 2. Request cert via Route53 plugin
 # ------------------------------
 echo "🔍 Checking for existing certificate for $DOMAIN..."
-CERT_PATH="$EFS_DIR/letsencrypt/live/$DOMAIN/fullchain.pem"
+CERT_PATH="$S3_DIR/certs/letsencrypt/live/$DOMAIN/fullchain.pem"
 
 if [ -f "$CERT_PATH" ]; then
   echo "✅ Certificate already exists for $DOMAIN. Skipping registration."
@@ -122,7 +106,7 @@ else
     --agree-tos \
     --non-interactive \
     --email thaidg@tapofthink.com \
-    --config-dir "$EFS_DIR/letsencrypt" \
+    --config-dir "$S3_DIR/certs/letsencrypt" \
     -v; do
 
     COUNT=$((COUNT+1))
@@ -137,9 +121,6 @@ else
 
   echo "✅ Certificate successfully obtained."
 fi
-
-cp -r $EFS_DIR $S3_DIR
-echo "✅ Certificate files copied to $S3_DIR"
 
 # ------------------------------
 # 3. Setup renewal timer
@@ -165,7 +146,7 @@ else
   echo "⏳ Certificate expires soon — renewing..."
   certbot renew \
     --dns-route53 \
-    --config-dir "$EFS_DIR/letsencrypt" \
+    --config-dir "$S3_DIR/certs/letsencrypt" \
     --quiet
 fi
 EOF

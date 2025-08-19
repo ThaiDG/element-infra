@@ -4,17 +4,13 @@ set -e
 # Interpolation of variables from Terraform
 TCP_NLB_DNS="${tcp_nlb_dns}"
 UDP_NLB_DNS="${udp_nlb_dns}"
-EFS_ID="${efs_id}"
-NFS_VERSION="${nfs_version}"
-if [ -z "$NFS_VERSION" ]; then
-  NFS_VERSION="4.1"
-fi
 AWS_REGION="${region}"
 DOMAIN="${root_domain}"
 
 # Constants
-EFS_DIR="/mnt/certs"
-CERT_SRC_DIR="$EFS_DIR/letsencrypt/live/$DOMAIN"
+S3_BUCKET_NAME="767828741221-certbot"
+S3_DIR="/s3_mounted"
+CERT_SRC_DIR="$S3_DIR/certs/letsencrypt/live/$DOMAIN"
 CERT_DEST_DIR="/etc/coturn/certs"
 CONFIG_FILE="/etc/turnserver.conf"
 PRIVATE_IP=$(hostname -I | awk '{print $1}')
@@ -23,7 +19,7 @@ PRIVATE_IP=$(hostname -I | awk '{print $1}')
 apt-get update && apt-get upgrade -y
 
 # 1. Install Coturn and NFS client
-apt-get update && apt-get install -y coturn nfs-common docker.io unzip curl
+apt-get update && apt-get install -y coturn docker.io unzip curl s3fs
 
 # Install AWS CLI if not already installed
 if ! command -v aws >/dev/null 2>&1; then
@@ -48,15 +44,36 @@ COTURN_SECRET=$(aws ssm get-parameter \
 # 2. Enable Coturn service
 sed -i 's/^#TURNSERVER_ENABLED=1$/TURNSERVER_ENABLED=1/' /etc/default/coturn
 
-# 3. Mount EFS for certs
-# Create EFS mount directory
-mkdir -p "$EFS_DIR"
-# Mount EFS
-echo "🔗 Mounting EFS $EFS_ID to $EFS_DIR"
-mount \
-  -t nfs \
-  -o nfsvers=$NFS_VERSION,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport \
-  $EFS_ID.efs.$AWS_REGION.amazonaws.com:/ $EFS_DIR
+# 3. ─── Configure and Mount S3FS ────────────────────────────────────────────
+
+# Create the media_store mount point under app directory
+mkdir -p $S3_DIR
+
+# Ensure permissions allow the container (or any user) to access it
+chown root:root $S3_DIR
+chmod 755 $S3_DIR
+
+# Append an fstab entry so the bucket auto-mounts on reboot
+echo "s3fs#$S3_BUCKET_NAME $S3_DIR fuse \
+  _netdev,allow_other,use_path_request_style,\
+url=https://s3.$AWS_REGION.amazonaws.com,iam_role=auto,nonempty,\
+mp_umask=0000 0 0" \
+  >> /etc/fstab
+
+# Reload the systemd
+systemctl daemon-reload
+
+# Mount all filesystems (including our new s3fs entry)
+mount -a
+
+# Verify the mount succeeded
+if ! mountpoint -q $S3_DIR; then
+  echo "❌ ERROR: s3fs mount failed for bucket $S3_BUCKET_NAME"
+  exit 1
+else
+  echo "✅ s3fs mounted $S3_BUCKET_NAME -> $S3_DIR"
+fi
+# ──────────────────────────────────────────────────────────────────────────
 
 # 4. Copy and secure certs
 # Ensure destination directory exists
