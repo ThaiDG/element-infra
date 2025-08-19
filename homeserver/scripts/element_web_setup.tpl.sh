@@ -129,7 +129,7 @@ cat <<EOL > element/config.$TAPYOUSH_DNS.json
   },
   "permalink_prefix": "https://$TAPYOUSH_DNS",
   "default_country_code": "VN",
-  "brand": "TAP Media Chat",
+  "brand": "Yoush",
   "room_directory": {
     "servers": [
       "$SYNAPSE_DNS"
