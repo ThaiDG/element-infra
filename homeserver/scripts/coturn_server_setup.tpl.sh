@@ -18,8 +18,31 @@ CERT_DEST_DIR="/etc/coturn/certs"
 CONFIG_FILE="/etc/turnserver.conf"
 PRIVATE_IP=$(hostname -I | awk '{print $1}')
 
+# Update and upgrade the system
+apt-get update && apt-get upgrade -y
+
 # 1. Install Coturn and NFS client
-apt-get update && apt-get install -y coturn nfs-common docker.io
+apt-get update && apt-get install -y coturn nfs-common docker.io unzip curl
+
+# Install AWS CLI if not already installed
+if ! command -v aws >/dev/null 2>&1; then
+  echo "⚙️ AWS CLI not found — installing..."
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  unzip awscliv2.zip
+  ./aws/install
+else
+  echo "✅ AWS CLI is already installed!"
+fi
+
+# Fetching credentials from SSM
+echo "🔐 Fetching credentials from SSM..."
+COTURN_SECRET=$(aws ssm get-parameter \
+  --name "/coturn/secret" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
 
 # 2. Enable Coturn service
 sed -i 's/^#TURNSERVER_ENABLED=1$/TURNSERVER_ENABLED=1/' /etc/default/coturn
@@ -53,19 +76,35 @@ tls-listening-port=5349
 listening-ip=0.0.0.0
 min-port=49152
 max-port=65535
-verbose
 fingerprint
-lt-cred-mech
-user=admin:Admin123
+use-auth-secret
+static-auth-secret=$COTURN_SECRET
 prometheus
 realm=$DOMAIN
 no-tcp-relay
+user-quota=12
+total-quota=1200
+stale-nonce
 cert=$CERT_DEST_DIR/fullchain.pem
 pkey=$CERT_DEST_DIR/privkey.pem
 no-stdout-log
 syslog
 simple-log
 no-multicast-peers
+denied-peer-ip=0.0.0.0-0.255.255.255
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=100.64.0.0-100.127.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+denied-peer-ip=169.254.0.0-169.254.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.0.0.0-192.0.0.255
+denied-peer-ip=192.0.2.0-192.0.2.255
+denied-peer-ip=192.88.99.0-192.88.99.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=198.18.0.0-198.19.255.255
+denied-peer-ip=198.51.100.0-198.51.100.255
+denied-peer-ip=203.0.113.0-203.0.113.255
+denied-peer-ip=240.0.0.0-255.255.255.255
 cli-ip=127.0.0.1
 cli-port=5766
 cli-password=qwerty

@@ -159,6 +159,14 @@ LIVEKIT_SECRET=$(aws ssm get-parameter \
   --output text
 )
 
+COTURN_SECRET=$(aws ssm get-parameter \
+  --name "/coturn/secret" \
+  --with-decryption \
+  --region "$AWS_REGION" \
+  --query 'Parameter.Value' \
+  --output text
+)
+
 # Create app directory and switch to it
 mkdir -p "$APP_DIR"
 cd "$APP_DIR"
@@ -360,6 +368,7 @@ listeners:
   - port: 8008
     tls: false
     type: http
+    bind_addresses: ['0.0.0.0']
     x_forwarded: true
     resources:
       - names: [client]
@@ -367,6 +376,7 @@ listeners:
   - port: 8448
     tls: false
     type: http
+    bind_addresses: ['0.0.0.0']
     x_forwarded: true
     resources:
       - names: [federation]
@@ -385,7 +395,7 @@ log_config: "/data/$SYNAPSE_DNS.log.config"
 registration_shared_secret: $REGISTRATION_SECRET
 media_store_path: /data/media_store
 report_stats: true
-report_stats_endpoint: synapse-usage-exporter:5000/report-usage-stats/push
+report_stats_endpoint: http://synapse-usage-exporter:5000/report-usage-stats/push
 macaroon_secret_key: $MACAROON_SECRET
 form_secret: $FORM_SECRET
 signing_key_path: "/data/$SYNAPSE_DNS.signing.key"
@@ -403,10 +413,9 @@ turn_uris:
   - "turn:$COTURN_UDP_DNS:3478?transport=udp"
   - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
   - "turns:$COTURN_TCP_DNS:5349?transport=tcp"
-turn_username: "admin"
-turn_password: "Admin123"
+turn_shared_secret: "$COTURN_SECRET"
 turn_user_lifetime: 86400
-turn_allow_guests: true
+turn_allow_guests: false
 
 public_baseurl: "https://$SYNAPSE_DNS"
 default_identity_server: "https://vector.im"
