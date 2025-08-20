@@ -1,8 +1,9 @@
 resource "aws_lb_target_group" "lb_target_group" {
-  port        = var.target_group_port
-  protocol    = var.target_group_protocol
-  vpc_id      = var.target_group_vpc_id
-  target_type = "instance"
+  port                 = var.target_group_port
+  protocol             = var.target_group_protocol
+  vpc_id               = var.target_group_vpc_id
+  target_type          = "instance"
+  deregistration_delay = 600
 
   dynamic "health_check" {
     for_each = var.target_group_protocol == "HTTP" ? [1] : []

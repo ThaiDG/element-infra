@@ -62,6 +62,7 @@ Write-Host "Found ASG: $asgName" -ForegroundColor Green
 Write-Host "Starting instance refresh for ASG: $asgName" -ForegroundColor Cyan
 aws autoscaling start-instance-refresh `
     --auto-scaling-group-name $asgName `
-    --region $region
+    --region $region `
+    --preferences '{\"MinHealthyPercentage\": 100, \"MaxHealthyPercentage\": 200}'
 
 Write-Host "Refresh initiated successfully!" -ForegroundColor Green

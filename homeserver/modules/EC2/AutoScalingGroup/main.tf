@@ -20,6 +20,15 @@ resource "aws_autoscaling_group" "autoscaling_group_template" {
   # Since Synapse instance need a little time to warm up
   default_instance_warmup = 600
 
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      instance_warmup        = 600
+      min_healthy_percentage = 100
+      max_healthy_percentage = 200
+    }
+  }
+
   launch_template {
     id      = var.launch_template_id
     version = "$Default"
