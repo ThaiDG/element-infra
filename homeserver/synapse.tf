@@ -100,6 +100,7 @@ module "synapse_asg" {
   asg_subnet_ids        = data.terraform_remote_state.vpc.outputs.public_subnet_ids
   launch_template_id    = module.synapse_lt.launch_template_id
   instance_name         = "${var.workspace}-synapse-server"
+  workspace             = var.workspace
   asg_health_check_type = "ELB"
   asg_target_group_arns = [
     module.main_target.target_group_arn,

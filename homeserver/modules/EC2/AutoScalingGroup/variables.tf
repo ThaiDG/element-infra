@@ -47,3 +47,8 @@ variable "instance_name" {
   description = "Name of the EC2 instance"
   type        = string
 }
+
+variable "workspace" {
+  description = "Workspace environment (e.g., prod, dev)"
+  type        = string
+}

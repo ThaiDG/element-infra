@@ -32,7 +32,7 @@ module "certbot_asg" {
   asg_max_size         = 1
   launch_template_id   = module.certbot_manager_lt.launch_template_id
   instance_name        = "${var.workspace}-certbot-manager"
-
+  workspace            = var.workspace
   asg_subnet_ids = [
     data.terraform_remote_state.vpc.outputs.public_subnet_ids[0]
   ]

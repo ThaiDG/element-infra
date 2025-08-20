@@ -1,3 +1,12 @@
+locals {
+  instance_tags = {
+    Project = "Yoush"
+    Owner   = "ThaiDG"
+    Env     = var.workspace == "prod" ? "Production" : "${var.workspace}"
+    Name    = "${var.instance_name}"
+  }
+}
+
 resource "aws_autoscaling_group" "autoscaling_group_template" {
   name_prefix         = var.asg_name
   desired_capacity    = var.asg_desired_capacity
@@ -20,10 +29,13 @@ resource "aws_autoscaling_group" "autoscaling_group_template" {
     create_before_destroy = true
   }
 
-  tag {
-    key                 = "Name"
-    value               = var.instance_name
-    propagate_at_launch = true
+  dynamic "tag" {
+    for_each = local.instance_tags
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
   }
 }
 
