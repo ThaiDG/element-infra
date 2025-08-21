@@ -39,30 +39,29 @@ resource "aws_rds_cluster" "aurora_pg" {
   storage_encrypted    = true
   db_subnet_group_name = aws_db_subnet_group.aurora_pg_subnet_group.name
 
-  skip_final_snapshot       = var.workspace == "prod" ? false : true
-  final_snapshot_identifier = var.workspace == "prod" ? "${var.workspace}-aurora-postgres-cluster" : null
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.workspace}-aurora-postgres-cluster"
 
-  performance_insights_enabled          = true
-  performance_insights_retention_period = 7
+  performance_insights_enabled = false
+  backup_retention_period      = 7
+  preferred_backup_window      = "17:00-18:00"         # 00:00-01:00 GMT+7 (next day)
+  preferred_maintenance_window = "Sat:18:30-Sat:20:00" # Sun 01:30-03:00 GMT+7
+  apply_immediately            = true
 
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
 
-  serverlessv2_scaling_configuration {
-    min_capacity             = 0
-    max_capacity             = 4
-    seconds_until_auto_pause = 300
-  }
-
+  # Using all AZs for high availability
   availability_zones = data.aws_availability_zones.available.names
 }
 
 resource "aws_rds_cluster_instance" "aurora_pg_instance" {
-  identifier          = "${var.workspace}-aurora-pg-instance"
-  cluster_identifier  = aws_rds_cluster.aurora_pg.id
-  engine              = aws_rds_cluster.aurora_pg.engine
-  engine_version      = aws_rds_cluster.aurora_pg.engine_version
-  instance_class      = "db.serverless" # Required for Serverless v2
-  publicly_accessible = false
+  identifier                 = "${var.workspace}-aurora-pg-instance"
+  cluster_identifier         = aws_rds_cluster.aurora_pg.id
+  engine                     = aws_rds_cluster.aurora_pg.engine
+  engine_version             = aws_rds_cluster.aurora_pg.engine_version
+  instance_class             = "db.t4g.medium"
+  publicly_accessible        = false
+  auto_minor_version_upgrade = true
 
   tags = {
     Name = "${var.workspace}-aurora-pg-instance"
