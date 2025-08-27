@@ -12,6 +12,8 @@ AWS_REGION="${aws_region}"
 POSTGRES_DNS="${postgres_dns}"
 SYNAPSE_VERSION="${synapse_version}"
 S3_BUCKET_NAME="${s3_bucket_name}"
+LIVEKIT_DNS="${livekit_dns}"
+LIVEKIT_TURN_DNS="${livekit_turn_dns}"
 
 # Define constants
 APP_DIR="/app"
@@ -79,93 +81,31 @@ docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION
 
 # Fetching credentials from SSM
 echo "🔐 Fetching credentials from SSM..."
-SMTP_USER=$(aws ssm get-parameter \
-  --name "/smtp/user" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
 
-SMTP_PASS=$(aws ssm get-parameter \
-  --name "/smtp/pass" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
+fetch_ssm_param() {
+  local param_name="$1"
+  aws ssm get-parameter \
+    --name "$param_name" \
+    --with-decryption \
+    --region "$AWS_REGION" \
+    --query 'Parameter.Value' \
+    --output text
+}
 
-POSTGRES_USER=$(aws ssm get-parameter \
-  --name "/synapse/postgres/user" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-POSTGRES_PASSWORD=$(aws ssm get-parameter \
-  --name "/synapse/postgres/password" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-SYNAPSE_DB=$(aws ssm get-parameter \
-  --name "/synapse/postgres/db" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-RECAPTCHA_PUBLIC_KEY=$(aws ssm get-parameter \
-  --name "/synapse/reCAPTCHA/public_key" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-RECAPTCHA_PRIVATE_KEY=$(aws ssm get-parameter \
-  --name "/synapse/reCAPTCHA/private_key" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-LIVEKIT_URL=$(aws ssm get-parameter \
-  --name "/synapse/livekit/url" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-LIVEKIT_KEY=$(aws ssm get-parameter \
-  --name "/synapse/livekit/key" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-LIVEKIT_SECRET=$(aws ssm get-parameter \
-  --name "/synapse/livekit/secret" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
-
-COTURN_SECRET=$(aws ssm get-parameter \
-  --name "/coturn/secret" \
-  --with-decryption \
-  --region "$AWS_REGION" \
-  --query 'Parameter.Value' \
-  --output text
-)
+SMTP_USER=$(fetch_ssm_param "/smtp/user")
+SMTP_PASS=$(fetch_ssm_param "/smtp/pass")
+POSTGRES_USER=$(fetch_ssm_param "/synapse/postgres/user")
+POSTGRES_PASSWORD=$(fetch_ssm_param "/synapse/postgres/password")
+SYNAPSE_DB=$(fetch_ssm_param "/synapse/postgres/db")
+RECAPTCHA_PUBLIC_KEY=$(fetch_ssm_param "/synapse/reCAPTCHA/public_key")
+RECAPTCHA_PRIVATE_KEY=$(fetch_ssm_param "/synapse/reCAPTCHA/private_key")
+LIVEKIT_URL=$(fetch_ssm_param "/synapse/livekit/url")
+LIVEKIT_KEY=$(fetch_ssm_param "/synapse/livekit/key")
+LIVEKIT_SECRET=$(fetch_ssm_param "/synapse/livekit/secret")
+COTURN_SECRET=$(fetch_ssm_param "/coturn/secret")
+MAS_CLIENT_ID=$(fetch_ssm_param "/mas/client/id")
+MAS_CLIENT_SECRET=$(fetch_ssm_param "/mas/client/secret")
+MAS_MATRIX_SECRET=$(fetch_ssm_param "/mas/matrix/secret")
 
 # Create app directory and switch to it
 mkdir -p "$APP_DIR"
@@ -182,6 +122,7 @@ services:
       - ./synapse/data:/data
       - ./synapse/config:/config
     ports:
+      - "8008:8008"
       - "8448:8448"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
@@ -193,37 +134,12 @@ services:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
     container_name: synapse-usage-exporter
     ports:
-      - 5000:5000
+      - "5000:5000"
     tmpfs:
       - /tmp/prometheus
     environment:
       - APP_LOG_LEVEL=DEBUG
       - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
-
-  jwt-auth:
-    image: ghcr.io/element-hq/lk-jwt-service:latest
-    container_name: jwt-auth
-    restart: always
-    ports:
-      - "8070:8080"
-    environment:
-      - LK_JWT_PORT=8080
-      - LIVEKIT_URL=$${LIVEKIT_URL}
-      - LIVEKIT_KEY=$${LIVEKIT_KEY}
-      - LIVEKIT_SECRET=$${LIVEKIT_SECRET}
-      - LIVEKIT_FULL_ACCESS_HOMESERVERS=$${SYNAPSE_DNS}
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - synapse
-      - jwt-auth
 
   prometheus:
     image: prom/prometheus:latest
@@ -243,9 +159,6 @@ SYNAPSE_DB=$SYNAPSE_DB
 AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
 AWS_REGION=$AWS_REGION
 SYNAPSE_VERSION=$SYNAPSE_VERSION
-LIVEKIT_URL=wss://$LIVEKIT_URL
-LIVEKIT_KEY=$LIVEKIT_KEY
-LIVEKIT_SECRET=$LIVEKIT_SECRET
 SYNAPSE_DNS=$SYNAPSE_DNS
 EOF
 
@@ -264,59 +177,6 @@ LC_COLLATE='C'
 LC_CTYPE='C'
 TEMPLATE template0
 OWNER $POSTGRES_USER;
-EOF
-
-# Create nginx configuration
-cat <<EOF > nginx.conf
-worker_processes auto;
-events {
-    worker_connections 1024;
-}
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-    sendfile on;
-    keepalive_timeout 65;
-    # Enable access and error logging
-    access_log /var/log/nginx/access.log combined;
-    error_log /var/log/nginx/error.log debug;
-
-    server {
-        listen 80;
-        server_name $SYNAPSE_DNS;
-
-        client_max_body_size $MAX_BODY_SIZE;
-
-        # Synapse endpoints
-        location ~ ^(/_matrix/|/.well-known/|/health) {
-            proxy_pass http://synapse:8008;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-        }
-
-        # JWT Auth / SFU endpoints
-        location = /sfu/get {
-            proxy_pass http://jwt-auth:8080;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-Forwarded-Host \$host;
-        }
-        location = /healthz {
-            proxy_pass http://jwt-auth:8080;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-Forwarded-Host \$host;
-        }
-    }
-}
 EOF
 
 # Create Prometheus job definition
@@ -410,9 +270,9 @@ max_upload_size: $MAX_BODY_SIZE
 
 # Enable TURN server
 turn_uris:
-  - "turn:$COTURN_UDP_DNS:3478?transport=udp"
-  - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
-  - "turns:$COTURN_TCP_DNS:5349?transport=tcp"
+  # - "turn:$COTURN_UDP_DNS:3478?transport=udp"
+  # - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
+  - "turns:$LIVEKIT_TURN_DNS:5349?transport=tcp"
 turn_shared_secret: "$COTURN_SECRET"
 turn_user_lifetime: 86400
 turn_allow_guests: false
@@ -448,29 +308,36 @@ user_directory:
   show_locked_users: true
 
 # Enable features
-# experimental_features:
-# # Enable LiveKit for Element Call
-#   msc2967_enabled: true
-#   msc3266_enabled: true
-#   msc4222_enabled: true
-#   msc4140_enabled: true
+experimental_features:
+  # Enable LiveKit for Element Call
+  msc2967_enabled: true
+  msc3266_enabled: true
+  msc4222_enabled: true
+  msc4140_enabled: true
 
-# max_event_delay_duration: 24h
-# rc_message:
-#   per_second: 0.5
-#   burst_count: 30
-# rc_delayed_event_mgmt:
-#   per_second: 1
-#   burst_count: 20
+# The maximum allowed duration by which sent events can be delayed, as
+# per MSC4140.
+max_event_delay_duration: 24h
+
+rc_message:
+  # This needs to match at least e2ee key sharing frequency plus a bit of headroom
+  # Note key sharing events are bursty
+  per_second: 0.5
+  burst_count: 30
+  # This needs to match at least the heart-beat frequency plus a bit of headroom
+  # Currently the heart-beat is every 5 seconds which translates into a rate of 0.2s
+rc_delayed_event_mgmt:
+  per_second: 1
+  burst_count: 20
 
 # Add well-known client content
 serve_server_wellknown: true
-# extra_well_known_client_content:
-#   org.matrix.msc4143.rtc_foci:
-#     - type: "livekit"
-#       livekit_service_url: "https://$SYNAPSE_DNS"
-#     - type: "nextgen_new_foci_type"
-#       props_for_nextgen_foci: "val"
+extra_well_known_client_content:
+  org.matrix.msc4143.rtc_foci:
+    - type: "livekit"
+      livekit_service_url: "https://$LIVEKIT_DNS"
+    - type: "nextgen_new_foci_type"
+      props_for_nextgen_foci: "val"
 
 
 # vim:ft=yaml

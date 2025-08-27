@@ -9,8 +9,8 @@ module "synapse_sg" {
   ingress_rules = [
     {
       description = "Allow traffic ALB routing to Nginx port 80"
-      from_port   = 80
-      to_port     = 80
+      from_port   = 8008
+      to_port     = 8008
       protocol    = "tcp"
       cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
@@ -302,9 +302,6 @@ module "sygnal_alb_sg" {
       to_port     = 443
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
-      security_groups = [
-        "${module.synapse_sg.security_group_id}" # Allow traffic from Synapse security group
-      ]
     }
   ]
 }
@@ -322,7 +319,82 @@ module "ssh_sg" {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"] # Replace with VPN Client endpoint address later
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+}
+
+# ---------------- LIVEKIT SECURITY GROUP ----------------
+module "livekit_sg" {
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-livekit-security-group"
+  security_group_description = "Security group for LiveKit server"
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+  ingress_rules = [
+    {
+      description = "Allow traffic for LiveKit server port 80 (HTTP)"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for LiveKit server port 443 (HTTPS)"
+      from_port   = 5349
+      to_port     = 5349
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for LiveKit server UDP port"
+      from_port   = 50000
+      to_port     = 60000
+      protocol    = "udp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for Prometheus"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
+      ]
+    }
+  ]
+}
+
+module "livekit_alb_sg" {
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-livekit-alb-security-group"
+  security_group_description = "Security group for LiveKit ALB"
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+  ingress_rules = [
+    {
+      description = "Allow traffic for LiveKit ALB port 80 (HTTP)"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow traffic for LiveKit ALB port 443 (HTTPS)"
+      from_port   = 5349
+      to_port     = 5349
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
     }
   ]
 }

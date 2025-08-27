@@ -45,3 +45,19 @@ module "sygnal_route53_record" {
   aws_lb_dns_name = aws_lb.sygnal_alb.dns_name
   aws_lb_zone_id  = aws_lb.sygnal_alb.zone_id
 }
+
+module "livekit_route53_record" {
+  source          = "./modules/Route53/Record/A"
+  zone_id         = data.aws_route53_zone.main.id
+  record_name     = "livekit.${var.root_domain}"
+  aws_lb_dns_name = aws_lb.livekit_alb.dns_name
+  aws_lb_zone_id  = aws_lb.livekit_alb.zone_id
+}
+
+module "livekit_turn_route53_record" {
+  source          = "./modules/Route53/Record/A"
+  zone_id         = data.aws_route53_zone.main.id
+  record_name     = "livekit-turn.${var.root_domain}"
+  aws_lb_dns_name = aws_lb.livekit_alb.dns_name
+  aws_lb_zone_id  = aws_lb.livekit_alb.zone_id
+}
