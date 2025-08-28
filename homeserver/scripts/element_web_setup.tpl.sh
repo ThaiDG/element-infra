@@ -137,7 +137,15 @@ cat <<EOL > element/config.$TAPYOUSH_DNS.json
   },
   "show_labs_settings": true,
   "features": {
-    "feature_pinning": "labs"
+    "feature_pinning": true,
+    "feature_video_rooms": true,
+    "feature_group_calls": true,
+    "feature_element_call_video_rooms": true
+  },
+  "element_call": {
+    "url": "https://call.element.io",
+    "use_exclusively": false,
+    "brand": "Yoush Call"
   },
   "default_theme": "light",
   "disable_guests": true
@@ -166,7 +174,15 @@ cat <<EOL > element/config.$YOUSHTAP_DNS.json
   },
   "show_labs_settings": true,
   "features": {
-    "feature_pinning": "labs"
+    "feature_pinning": true,
+    "feature_video_rooms": true,
+    "feature_group_calls": true,
+    "feature_element_call_video_rooms": true
+  },
+  "element_call": {
+    "url": "https://call.element.io",
+    "use_exclusively": false,
+    "brand": "Yoush Call"
   },
   "default_theme": "light",
   "disable_guests": true
