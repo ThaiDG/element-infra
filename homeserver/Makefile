@@ -69,4 +69,7 @@ coturn-refresh:
 element-refresh:
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "element-web"
 
-refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh
+livekit-refresh:
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "livekit-server"
+
+refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh livekit-refresh
