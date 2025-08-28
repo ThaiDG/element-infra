@@ -14,6 +14,7 @@ SYNAPSE_VERSION="${synapse_version}"
 S3_BUCKET_NAME="${s3_bucket_name}"
 LIVEKIT_DNS="${livekit_dns}"
 LIVEKIT_TURN_DNS="${livekit_turn_dns}"
+MAS_DNS="${mas_dns}"
 
 # Define constants
 APP_DIR="/app"
@@ -288,7 +289,7 @@ turn_user_lifetime: 86400
 turn_allow_guests: false
 
 public_baseurl: "https://$SYNAPSE_DNS"
-default_identity_server: "https://vector.im"
+# default_identity_server: "https://$MAS_DNS"
 web_client_location: "https://$TAPYOUSH_DNS"
 
 # Push notifications to Sygnal
@@ -324,6 +325,35 @@ experimental_features:
   msc3266_enabled: true
   msc4222_enabled: true
   msc4140_enabled: true
+  # # The below configuration is used for Matrix Authentication Service
+  # msc4108_enabled: true
+  # msc3861:
+  #   enabled: true
+
+  #   # Synapse will call {issuer}/.well-known/openid-configuration to get the OIDC configuration
+  #   issuer: https://$MAS_DNS/
+
+  #   # Matches the client_id in the auth service config
+  #   client_id: $MAS_CLIENT_ID
+
+  #   # Matches the client_auth_method in the auth service config
+  #   client_auth_method: client_secret_basic
+
+  #   # Matches the client_secret in the auth service config
+  #   client_secret: "$MAS_CLIENT_SECRET"
+
+  #   # Matches the matrix.secret in the auth service config
+  #   admin_token: "$MAS_MATRIX_SECRET"
+
+  #   # URL to advertise to clients where users can self-manage their account
+  #   # Defaults to the URL advertised by MAS, e.g. https://{public_mas_domain}/account/
+  #   account_management_url: "https://$MAS_DNS/account/"
+
+  #   # URL which Synapse will use to introspect access tokens
+  #   # Defaults to the URL advertised by MAS, e.g. https://{public_mas_domain}/oauth2/introspect
+  #   # This is useful to override if Synapse has a way to call the auth service's
+  #   # introspection endpoint directly, skipping intermediate reverse proxies
+  #   introspection_endpoint: "https://$MAS_DNS/oauth2/introspect"
 
 # The maximum allowed duration by which sent events can be delayed, as
 # per MSC4140.
@@ -348,6 +378,9 @@ extra_well_known_client_content:
       livekit_service_url: "https://$LIVEKIT_DNS/livekit/jwt"
     - type: "nextgen_new_foci_type"
       props_for_nextgen_foci: "val"
+  # org.matrix.msc2965.authentication:
+  #   - issuer: "https://$MAS_DNS"
+  #     account: "https://$MAS_DNS"
 
 
 # vim:ft=yaml

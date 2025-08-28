@@ -380,3 +380,38 @@ module "livekit_alb_sg" {
     }
   ]
 }
+
+# ---------------- MAS SERVER SECURITY GROUP ----------------
+# module "mas_sg" {
+#   source                     = "./modules/EC2/SecurityGroup"
+#   security_group_name_prefix = "${var.workspace}-mas-server-security-group-"
+#   security_group_description = "Security group for MAS Server"
+#   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+#   ingress_rules = [
+#     {
+#       description = "Allow traffic from ALB"
+#       from_port   = 0
+#       to_port     = 0
+#       protocol    = "tcp"
+#       cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+#     }
+#   ]
+# }
+
+# module "mas_alb_sg" {
+#   source                     = "./modules/EC2/SecurityGroup"
+#   security_group_name_prefix = "${var.workspace}-mas-server-alb-security-group-"
+#   security_group_description = "Security group for MAS Server ALB"
+#   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+#   ingress_rules = [
+#     {
+#       description = "Allow traffic for MAS Server ALB port 443"
+#       from_port   = 0
+#       to_port     = 0
+#       protocol    = "tcp"
+#       cidr_blocks = ["0.0.0.0/0"]
+#     }
+#   ]
+# }

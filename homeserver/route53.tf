@@ -61,3 +61,11 @@ module "livekit_turn_route53_record" {
   aws_lb_dns_name = aws_lb.livekit_alb.dns_name
   aws_lb_zone_id  = aws_lb.livekit_alb.zone_id
 }
+
+# module "mas_route53_record" {
+#   source          = "./modules/Route53/Record/A"
+#   zone_id         = data.aws_route53_zone.main.id
+#   record_name     = "mas.${var.root_domain}"
+#   aws_lb_dns_name = aws_lb.mas_alb.dns_name
+#   aws_lb_zone_id  = aws_lb.mas_alb.zone_id
+# }
