@@ -206,6 +206,9 @@ events {
 }
 
 http {
+    # Add resolver for DNS resolution within Docker network
+    resolver 127.0.0.11 valid=30s;
+    
     map \$http_upgrade \$connection_upgrade {
         default upgrade;
         ''      close;
@@ -225,10 +228,6 @@ http {
         }
 
         location /sfu/get {
-            add_header Access-Control-Allow-Origin "*";
-            add_header Access-Control-Allow-Methods "POST";
-            add_header Access-Control-Allow-Headers "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token";
-            
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
@@ -262,6 +261,9 @@ http {
     }
 }
 stream {
+    # Add resolver for DNS resolution in stream context
+    resolver 127.0.0.11 valid=30s;
+    
     map \$ssl_preread_server_name \$turn_upstream {
         livekit-turn.$ROOT_DOMAIN     livekit:5349;
         default                       livekit:7880;
