@@ -149,14 +149,15 @@ services:
 
   nginx:
     image: nginx:latest
-    container_name: synapse-nginx
+    container_name: nginx
     restart: always
     ports:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - synapse
+      synapse:
+        condition: service_healthy
 EOF
 
 # Create .env file
@@ -405,6 +406,15 @@ http {
     # Set maximum upload size to match Synapse configuration
     client_max_body_size $MAX_BODY_SIZE;
     
+    # Define upstream servers with health checks
+    upstream synapse_client {
+        server synapse:8008 max_fails=3 fail_timeout=30s;
+    }
+    
+    upstream synapse_federation {
+        server synapse:8448 max_fails=3 fail_timeout=30s;
+    }
+    
     map \$http_upgrade \$connection_upgrade {
         default upgrade;
         ''      close;
@@ -416,49 +426,64 @@ http {
 
         # Health check endpoint for ALB
         location /health {
-            proxy_pass http://synapse:8008/health;
+            proxy_pass http://synapse_client/health;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header Host \$host;
             proxy_http_version 1.1;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 10s;
+            proxy_read_timeout 10s;
         }
 
         # Matrix Federation API - route federation requests to port 8448
         location /_matrix/federation {
-            proxy_pass http://synapse:8448;
+            proxy_pass http://synapse_federation;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header Host \$host;
             proxy_http_version 1.1;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
 
         # Matrix Client API - all other /_matrix requests go to port 8008
         location /_matrix {
-            proxy_pass http://synapse:8008;
+            proxy_pass http://synapse_client;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header Host \$host;
             
             # Synapse responses may be chunked, which is an HTTP/1.1 feature.
             proxy_http_version 1.1;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
 
         # Synapse admin endpoints
         location /_synapse {
-            proxy_pass http://synapse:8008;
+            proxy_pass http://synapse_client;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header Host \$host;
             proxy_http_version 1.1;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
 
         # Well-known endpoints (served by Synapse via homeserver.yaml)
         location /.well-known {
-            proxy_pass http://synapse:8008;
+            proxy_pass http://synapse_client;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header Host \$host;
             proxy_http_version 1.1;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 10s;
+            proxy_read_timeout 10s;
         }
     }
 }
