@@ -9,18 +9,8 @@ module "synapse_sg" {
   ingress_rules = [
     {
       description = "Allow traffic ALB routing to Nginx port 80"
-      from_port   = 8008
-      to_port     = 8008
-      protocol    = "tcp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
-      security_groups = [
-        "${module.synapse_alb_sg.security_group_id}" # Allow traffic from Synapse's ALB security group
-      ]
-    },
-    {
-      description = "Allow traffic ALB routing to Synapse federation port 8448"
-      from_port   = 8448
-      to_port     = 8448
+      from_port   = 80
+      to_port     = 80
       protocol    = "tcp"
       cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
       security_groups = [
@@ -54,14 +44,6 @@ module "synapse_alb_sg" {
       to_port         = 443
       protocol        = "tcp"
       cidr_blocks     = ["0.0.0.0/0"] # Allow all traffic for Synapse ALB
-      security_groups = []
-    },
-    {
-      description     = "Allow traffic for Synapse Federation ALB"
-      from_port       = 8448
-      to_port         = 8448
-      protocol        = "tcp"
-      cidr_blocks     = ["0.0.0.0/0"] # Allow Federation traffic
       security_groups = []
     }
   ]

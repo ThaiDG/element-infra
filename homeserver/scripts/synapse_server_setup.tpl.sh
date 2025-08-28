@@ -121,9 +121,6 @@ services:
     volumes:
       - ./synapse/data:/data
       - ./synapse/config:/config
-    ports:
-      - "8008:8008"
-      - "8448:8448"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8008/_matrix/client/versions || exit 1"]
       interval: 30s
@@ -148,6 +145,17 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
+
+  nginx:
+    image: nginx:latest
+    container_name: synapse-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - synapse
 EOF
 
 # Create .env file
@@ -168,6 +176,8 @@ mkdir -p postgres/data
 touch postgres/init.sql
 # Create prometheus volume directory
 mkdir -p prometheus
+# Create nginx directory
+mkdir -p nginx
 
 # Create init SQL content
 cat <<EOF > postgres/init.sql
@@ -335,12 +345,90 @@ serve_server_wellknown: true
 extra_well_known_client_content:
   org.matrix.msc4143.rtc_foci:
     - type: "livekit"
-      livekit_service_url: "https://$LIVEKIT_DNS"
+      livekit_service_url: "https://$LIVEKIT_DNS/livekit/jwt"
     - type: "nextgen_new_foci_type"
       props_for_nextgen_foci: "val"
 
 
 # vim:ft=yaml
+EOF
+
+# Create Nginx configuration for Matrix routing
+cat <<EOF > nginx/nginx.conf
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log  notice;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    # Add resolver for Docker DNS
+    resolver 127.0.0.11 valid=30s;
+    
+    # Set maximum upload size to match Synapse configuration
+    client_max_body_size $MAX_BODY_SIZE;
+    
+    map \$http_upgrade \$connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    server {
+        listen       80;
+        server_name  $SYNAPSE_DNS;
+
+        # Health check endpoint for ALB
+        location /health {
+            proxy_pass http://synapse:8008/health;
+            proxy_set_header X-Forwarded-For \$remote_addr;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host \$host;
+            proxy_http_version 1.1;
+        }
+
+        # Matrix Federation API - route federation requests to port 8448
+        location /_matrix/federation {
+            proxy_pass http://synapse:8448;
+            proxy_set_header X-Forwarded-For \$remote_addr;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host \$host;
+            proxy_http_version 1.1;
+        }
+
+        # Matrix Client API - all other /_matrix requests go to port 8008
+        location /_matrix {
+            proxy_pass http://synapse:8008;
+            proxy_set_header X-Forwarded-For \$remote_addr;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host \$host;
+            
+            # Synapse responses may be chunked, which is an HTTP/1.1 feature.
+            proxy_http_version 1.1;
+        }
+
+        # Synapse admin endpoints
+        location /_synapse {
+            proxy_pass http://synapse:8008;
+            proxy_set_header X-Forwarded-For \$remote_addr;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host \$host;
+            proxy_http_version 1.1;
+        }
+
+        # Well-known endpoints (served by Synapse via homeserver.yaml)
+        location /.well-known {
+            proxy_pass http://synapse:8008;
+            proxy_set_header X-Forwarded-For \$remote_addr;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header Host \$host;
+            proxy_http_version 1.1;
+        }
+    }
+}
 EOF
 
 # ─── Configure and Mount S3FS ────────────────────────────────────────────

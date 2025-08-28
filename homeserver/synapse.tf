@@ -48,32 +48,17 @@ resource "aws_lb" "synapse_alb" {
   ]
 }
 
-# Main port for Synapse is 8008
+# Main port for nginx reverse proxy
 module "main_target" {
   source                            = "./modules/EC2/LoadBalancing"
   load_balancer_arn                 = aws_lb.synapse_alb.arn
-  target_group_port                 = 8008
+  target_group_port                 = 80
   target_group_protocol             = "HTTP"
   target_group_vpc_id               = data.terraform_remote_state.vpc.outputs.vpc_id
   target_group_health_check_enabled = true
   target_group_health_check_path    = "/health"
-  target_group_health_check_port    = "8008"
+  target_group_health_check_port    = "80"
   listener_port                     = 443
-  listener_protocol                 = "HTTPS"
-  certificate_arn                   = data.aws_acm_certificate.default.arn
-}
-
-# Support port 8448 for federation
-module "federation_target" {
-  source                            = "./modules/EC2/LoadBalancing"
-  load_balancer_arn                 = aws_lb.synapse_alb.arn
-  target_group_port                 = 8448
-  target_group_protocol             = "HTTP"
-  target_group_vpc_id               = data.terraform_remote_state.vpc.outputs.vpc_id
-  target_group_health_check_enabled = true
-  target_group_health_check_path    = "/health"
-  target_group_health_check_port    = "8448"
-  listener_port                     = 8448
   listener_protocol                 = "HTTPS"
   certificate_arn                   = data.aws_acm_certificate.default.arn
 }
@@ -106,7 +91,6 @@ module "synapse_asg" {
   asg_health_check_type = "ELB"
   asg_target_group_arns = [
     module.main_target.target_group_arn,
-    module.federation_target.target_group_arn,
     module.synapse_prometheus_target.target_group_arn
   ]
 }
