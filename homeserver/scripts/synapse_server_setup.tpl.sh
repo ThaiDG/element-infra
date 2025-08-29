@@ -376,7 +376,7 @@ serve_server_wellknown: true
 extra_well_known_client_content:
   org.matrix.msc4143.rtc_foci:
     - type: "livekit"
-      livekit_service_url: "https://$LIVEKIT_DNS/livekit/jwt"
+      livekit_service_url: "https://$LIVEKIT_DNS"
     - type: "nextgen_new_foci_type"
       props_for_nextgen_foci: "val"
   # org.matrix.msc2965.authentication:
