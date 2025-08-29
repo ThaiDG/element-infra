@@ -315,34 +315,44 @@ module "livekit_sg" {
 
   ingress_rules = [
     {
-      description = "Allow traffic for LiveKit server port 80 (HTTP)"
-      from_port   = 80
-      to_port     = 80
-      protocol    = "tcp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
-      security_groups = [
-        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
-      ]
+      description     = "Allow traffic for LiveKit server port 80 (HTTP) from internet via NLB (preserves client IP)"
+      from_port       = 80
+      to_port         = 80
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = []
     },
     {
-      description = "Allow traffic for LiveKit server port 443 (HTTPS)"
-      from_port   = 5349
-      to_port     = 5349
-      protocol    = "tcp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
-      security_groups = [
-        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
-      ]
+      description     = "Allow traffic for LiveKit TURN TLS port 5349 (TCP) from internet via NLB (preserves client IP)"
+      from_port       = 5349
+      to_port         = 5349
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = []
     },
     {
-      description = "Allow traffic for LiveKit server UDP port"
-      from_port   = 50000
-      to_port     = 60000
-      protocol    = "udp"
-      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
-      security_groups = [
-        "${module.livekit_alb_sg.security_group_id}" # Allow traffic from LiveKit's ALB security group
-      ]
+      description     = "Allow traffic for LiveKit ICE TCP fallback"
+      from_port       = 7881
+      to_port         = 7881
+      protocol        = "tcp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = []
+    },
+    {
+      description     = "Allow traffic for LiveKit TURN UDP 3478 from internet via NLB (preserves client IP)"
+      from_port       = 3478
+      to_port         = 3478
+      protocol        = "udp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = []
+    },
+    {
+      description     = "Allow traffic for LiveKit server UDP port"
+      from_port       = 50000
+      to_port         = 60000
+      protocol        = "udp"
+      cidr_blocks     = ["0.0.0.0/0"]
+      security_groups = []
     },
     {
       description = "Allow traffic for Prometheus"
@@ -365,14 +375,28 @@ module "livekit_alb_sg" {
 
   ingress_rules = [
     {
-      description = "Allow traffic for LiveKit ALB port 80 (HTTP)"
+      description = "Allow traffic for LiveKit NLB TCP 80 (HTTP)"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow traffic for LiveKit NLB TLS 443 (frontend)"
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     },
     {
-      description = "Allow traffic for LiveKit ALB port 443 (HTTPS)"
+      description = "Allow traffic for LiveKit NLB UDP 3478 (TURN)"
+      from_port   = 3478
+      to_port     = 3478
+      protocol    = "udp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow traffic for LiveKit NLB TCP 5349 (TURN TLS)"
       from_port   = 5349
       to_port     = 5349
       protocol    = "tcp"

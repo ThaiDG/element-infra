@@ -17,6 +17,32 @@ S3_DIR="/s3_mounted"
 CERT_SRC_DIR="$S3_DIR/certs/letsencrypt/live/$ROOT_DOMAIN"
 CERT_DEST_DIR="$WORK_DIR/certs"
 
+# Discover instance's private IP using IMDSv2 (fallback to hostname if IMDSv2 unavailable)
+get_imds_token() {
+  curl -s --connect-timeout 1 --max-time 2 \
+    -X PUT "http://169.254.169.254/latest/api/token" \
+    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true
+}
+
+get_meta_imdsv2() {
+  local path="$1"; local token="$2"
+  curl -s --connect-timeout 1 --max-time 2 \
+    -H "X-aws-ec2-metadata-token: $token" \
+    "http://169.254.169.254/latest/meta-data/$path" || true
+}
+
+IMDS_TOKEN=$(get_imds_token)
+if [ -n "$IMDS_TOKEN" ]; then
+  PRIVATE_IP=$(get_meta_imdsv2 "local-ipv4" "$IMDS_TOKEN")
+fi
+if [ -z "$PRIVATE_IP" ]; then
+  PRIVATE_IP=$(hostname -I | awk '{print $1}')
+fi
+if [ -z "$PRIVATE_IP" ]; then
+  PRIVATE_IP="127.0.0.1"
+fi
+echo "Using PRIVATE_IP=$PRIVATE_IP"
+
 # Install AWS CLI if not already installed
 apt-get update && \
 apt-get install -y \
@@ -115,10 +141,13 @@ port: 7880
 bind_addresses:
     - "0.0.0.0"
 rtc:
-    tcp_port: 7881
-    port_range_start: 50000
-    port_range_end: 60000
-    use_external_ip: false
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+  use_external_ip: true
+  stun_servers:
+    - stun.l.google.com:19302
+  allow_tcp_fallback: true
 room:
     auto_create: false
 logging:
@@ -136,6 +165,8 @@ turn:
     domain: livekit-turn.$ROOT_DOMAIN
     cert_file: $CERT_DEST_DIR/fullchain.pem
     key_file: $CERT_DEST_DIR/privkey.pem
+    relay_range_start: 50000
+    relay_range_end: 60000
 keys:
     $LIVEKIT_APIKEY: $LIVEKIT_APISECRET
 prometheus:
@@ -152,6 +183,7 @@ services:
   livekit:
     image: livekit/livekit-server:latest
     container_name: livekit
+    network_mode: host
     command: --config /etc/livekit.yaml
     restart: unless-stopped
     volumes:
@@ -160,6 +192,7 @@ services:
   jwt-auth:
     image: ghcr.io/element-hq/lk-jwt-service:latest
     container_name: jwt-auth
+    network_mode: host
     restart: always
     environment:
       - LK_JWT_PORT=8080
@@ -170,10 +203,8 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    network_mode: host
     restart: always
-    ports:
-      - "80:80"
-      - "5349:5349"
     volumes:
       - $WORK_DIR/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -190,7 +221,7 @@ services:
 
 EOF
 
-# Create Nginx config
+# Create Nginx config (host network; proxy to localhost)
 cat <<EOF > $WORK_DIR/nginx.conf
 # user and worker setup
 user  nginx;
@@ -206,9 +237,6 @@ events {
 }
 
 http {
-    # Add resolver for DNS resolution within Docker network
-    resolver 127.0.0.11 valid=30s;
-    
     map \$http_upgrade \$connection_upgrade {
         default upgrade;
         ''      close;
@@ -217,62 +245,71 @@ http {
     server {
         listen       80;  
         server_name  livekit.$ROOT_DOMAIN;
+        log_not_found off;
+        client_max_body_size 2m;
+
+        # Drop root requests from scanners without response
+        location = / {
+          access_log off;
+          return 444;
+        }
 
         location /livekit/jwt/ {
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto  \$scheme;
-            
-            proxy_pass http://jwt-auth:8080/;
+            proxy_set_header X-Forwarded-Proto  https;
+            proxy_set_header X-Forwarded-Host   \$host;
+            proxy_set_header Connection         "";
+            proxy_pass http://$PRIVATE_IP:8080/;
         }
 
         location /sfu/get {
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto  \$scheme;
-
-            proxy_pass http://jwt-auth:8080/sfu/get;
+            proxy_set_header X-Forwarded-Proto  https;
+            proxy_set_header X-Forwarded-Host   \$host;
+            proxy_set_header Connection         "";
+            proxy_http_version 1.1;
+            proxy_request_buffering off;
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+            send_timeout 300s;
+            proxy_pass http://$PRIVATE_IP:8080/sfu/get;
         }
 
         location /healthz {
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto  \$scheme;
+            proxy_set_header X-Forwarded-Proto  https;
             proxy_set_header X-Forwarded-Host   \$host;
+            proxy_set_header Connection         "";
 
-            proxy_pass http://jwt-auth:8080/healthz;
+            proxy_pass http://$PRIVATE_IP:8080/healthz;
         }
 
         location /livekit/sfu/ {
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto  \$scheme;
+            proxy_set_header X-Forwarded-Proto  https;
+            proxy_set_header X-Forwarded-Host   \$host;
+            proxy_set_header Connection         "";
 
             proxy_set_header Upgrade            \$http_upgrade;
             proxy_set_header Connection         \$connection_upgrade;
             proxy_buffering off;
+            proxy_http_version 1.1;
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+            send_timeout 300s;
             
-            proxy_pass http://livekit:7880/;
+            proxy_pass http://$PRIVATE_IP:7880/;
         }
-    }
-}
-stream {
-    # Add resolver for DNS resolution in stream context
-    resolver 127.0.0.11 valid=30s;
-    
-    map \$ssl_preread_server_name \$turn_upstream {
-        livekit-turn.$ROOT_DOMAIN     livekit:5349;
-        default                       livekit:7880;
-    }
-
-    server {
-        listen        5349;
-        proxy_pass    \$turn_upstream;
-        ssl_preread   on;  # peek at SNI, don't decrypt
     }
 }
 

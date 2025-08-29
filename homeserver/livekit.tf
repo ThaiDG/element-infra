@@ -56,6 +56,20 @@ module "livekit_https_target" {
   certificate_arn                    = data.aws_acm_certificate.default.arn
 }
 
+module "livekit_http_target" {
+  source                             = "./modules/EC2/LoadBalancing"
+  load_balancer_arn                  = aws_lb.livekit_alb.arn
+  target_group_port                  = 80
+  target_group_protocol              = "TCP"
+  target_group_vpc_id                = data.terraform_remote_state.vpc.outputs.vpc_id
+  target_group_health_check_enabled  = true
+  target_group_health_check_port     = "80"
+  target_group_health_check_protocol = "TCP"
+  listener_port                      = 80
+  listener_protocol                  = "TCP"
+  certificate_arn                    = ""
+}
+
 module "livekit_turn_target" {
   source                             = "./modules/EC2/LoadBalancing"
   load_balancer_arn                  = aws_lb.livekit_alb.arn
@@ -67,6 +81,20 @@ module "livekit_turn_target" {
   target_group_health_check_protocol = "TCP"
   listener_port                      = 5349
   listener_protocol                  = "TCP"
+  certificate_arn                    = ""
+}
+
+module "livekit_turn_udp_target" {
+  source                             = "./modules/EC2/LoadBalancing"
+  load_balancer_arn                  = aws_lb.livekit_alb.arn
+  target_group_port                  = 3478
+  target_group_protocol              = "UDP"
+  target_group_vpc_id                = data.terraform_remote_state.vpc.outputs.vpc_id
+  target_group_health_check_enabled  = true
+  target_group_health_check_port     = "7881"
+  target_group_health_check_protocol = "TCP"
+  listener_port                      = 3478
+  listener_protocol                  = "UDP"
   certificate_arn                    = ""
 }
 
@@ -96,8 +124,10 @@ module "livekit_asg" {
   workspace             = var.workspace
   asg_health_check_type = "ELB"
   asg_target_group_arns = [
+    module.livekit_http_target.target_group_arn,
     module.livekit_https_target.target_group_arn,
     module.livekit_turn_target.target_group_arn,
+    module.livekit_turn_udp_target.target_group_arn,
     module.livekit_prometheus_target.target_group_arn,
   ]
 }
