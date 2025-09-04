@@ -129,6 +129,7 @@ denied-peer-ip=198.18.0.0-198.19.255.255
 denied-peer-ip=198.51.100.0-198.51.100.255
 denied-peer-ip=203.0.113.0-203.0.113.255
 denied-peer-ip=240.0.0.0-255.255.255.255
+allowed-peer-ip=$PRIVATE_IP
 cli-ip=127.0.0.1
 cli-port=5766
 cli-password=qwerty
