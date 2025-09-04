@@ -87,36 +87,46 @@ endif
 synapse-refresh:
 ifeq ($(OS),windows)
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "synapse-server"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "synapse-server"
 else
-	@echo "synapse-refresh is only supported on Windows."
+	@bash ./refresh-instance.sh -AsgPrefix "synapse-server"
 endif
 
 sygnal-refresh:
 ifeq ($(OS),windows)
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "sygnal-service"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "sygnal-service"
 else
-	@echo "sygnal-refresh is only supported on Windows."
+	@bash ./refresh-instance.sh -AsgPrefix "sygnal-service"
 endif
 
 coturn-refresh:
 ifeq ($(OS),windows)
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "coturn"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "coturn"
 else
-	@echo "coturn-refresh is only supported on Windows."
+	@bash ./refresh-instance.sh -AsgPrefix "coturn"
 endif
 
 element-refresh:
 ifeq ($(OS),windows)
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "element-web"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "element-web"
 else
-	@echo "element-refresh is only supported on Windows."
+	@bash ./refresh-instance.sh -AsgPrefix "element-web"
 endif
 
 livekit-refresh:
 ifeq ($(OS),windows)
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "livekit-server"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "livekit-server"
 else
-	@echo "livekit-refresh is only supported on Windows."
+	@bash ./refresh-instance.sh -AsgPrefix "livekit-server"
 endif
 
 refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh livekit-refresh
