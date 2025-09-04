@@ -235,6 +235,16 @@ http {
         ''      close;
     }
 
+    # Add connection pooling for upstream servers
+    upstream jwt_auth_upstream {
+        server $DOCKER_GATEWAY_IP:8080;
+        keepalive 32;
+    }
+    upstream livekit_upstream {
+        server $DOCKER_GATEWAY_IP:7880;
+        keepalive 32;
+    }
+
     server {
         listen       80;  
         server_name  livekit.$ROOT_DOMAIN;
@@ -245,16 +255,6 @@ http {
         location = / {
           access_log off;
           return 444;
-        }
-
-        # Add connection pooling for upstream servers
-        upstream jwt_auth_upstream {
-            server $DOCKER_GATEWAY_IP:8080;
-            keepalive 32;
-        }
-        upstream livekit_upstream {
-            server $DOCKER_GATEWAY_IP:7880;
-            keepalive 32;
         }
 
         location /livekit/jwt/ {
