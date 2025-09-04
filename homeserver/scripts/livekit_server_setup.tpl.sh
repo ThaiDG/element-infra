@@ -17,32 +17,6 @@ S3_DIR="/s3_mounted"
 CERT_SRC_DIR="$S3_DIR/certs/letsencrypt/live/$ROOT_DOMAIN"
 CERT_DEST_DIR="$WORK_DIR/certs"
 
-# Discover instance's private IP using IMDSv2 (fallback to hostname if IMDSv2 unavailable)
-get_imds_token() {
-  curl -s --connect-timeout 1 --max-time 2 \
-    -X PUT "http://169.254.169.254/latest/api/token" \
-    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" || true
-}
-
-get_meta_imdsv2() {
-  local path="$1"; local token="$2"
-  curl -s --connect-timeout 1 --max-time 2 \
-    -H "X-aws-ec2-metadata-token: $token" \
-    "http://169.254.169.254/latest/meta-data/$path" || true
-}
-
-IMDS_TOKEN=$(get_imds_token)
-if [ -n "$IMDS_TOKEN" ]; then
-  PRIVATE_IP=$(get_meta_imdsv2 "local-ipv4" "$IMDS_TOKEN")
-fi
-if [ -z "$PRIVATE_IP" ]; then
-  PRIVATE_IP=$(hostname -I | awk '{print $1}')
-fi
-if [ -z "$PRIVATE_IP" ]; then
-  PRIVATE_IP="127.0.0.1"
-fi
-echo "Using PRIVATE_IP=$PRIVATE_IP"
-
 # Install AWS CLI if not already installed
 apt-get update && \
 apt-get install -y \
@@ -221,6 +195,25 @@ services:
 
 EOF
 
+# Add before creating nginx.conf (around line 170)
+# Get Docker gateway IP for container communication
+start_docker() {
+  systemctl start docker
+  sleep 2  # Give Docker time to initialize
+  
+  # Get the gateway IP from Docker bridge network
+  DOCKER_GATEWAY_IP=$(docker network inspect bridge --format='{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+  if [ -z "$DOCKER_GATEWAY_IP" ]; then
+    echo "⚠️ Could not detect Docker gateway IP, falling back to 172.17.0.1"
+    DOCKER_GATEWAY_IP="172.17.0.1"
+  else
+    echo "✅ Detected Docker gateway IP: $DOCKER_GATEWAY_IP"
+  fi
+}
+
+# Start Docker to get gateway IP
+start_docker
+
 # Create Nginx config (host network; proxy to localhost)
 cat <<EOF > $WORK_DIR/nginx.conf
 # user and worker setup
@@ -254,6 +247,16 @@ http {
           return 444;
         }
 
+        # Add connection pooling for upstream servers
+        upstream jwt_auth_upstream {
+            server $DOCKER_GATEWAY_IP:8080;
+            keepalive 32;
+        }
+        upstream livekit_upstream {
+            server $DOCKER_GATEWAY_IP:7880;
+            keepalive 32;
+        }
+
         location /livekit/jwt/ {
             proxy_set_header Host               \$host;
             proxy_set_header X-Real-IP          \$remote_addr;
@@ -261,7 +264,7 @@ http {
             proxy_set_header X-Forwarded-Proto  https;
             proxy_set_header X-Forwarded-Host   \$host;
             proxy_set_header Connection         "";
-            proxy_pass http://$PRIVATE_IP:8080/;
+            proxy_pass http://jwt_auth_upstream;
         }
 
         location /sfu/get {
@@ -277,7 +280,7 @@ http {
             proxy_send_timeout 300s;
             proxy_read_timeout 300s;
             send_timeout 300s;
-            proxy_pass http://$PRIVATE_IP:8080/sfu/get;
+            proxy_pass http://jwt_auth_upstream/sfu/get;
         }
 
         location /healthz {
@@ -288,7 +291,7 @@ http {
             proxy_set_header X-Forwarded-Host   \$host;
             proxy_set_header Connection         "";
 
-            proxy_pass http://$PRIVATE_IP:8080/healthz;
+            proxy_pass http://jwt_auth_upstream/healthz;
         }
 
         location /livekit/sfu/ {
@@ -307,8 +310,8 @@ http {
             proxy_send_timeout 300s;
             proxy_read_timeout 300s;
             send_timeout 300s;
-            
-            proxy_pass http://$PRIVATE_IP:7880/;
+
+            proxy_pass http://livekit_upstream/;
         }
     }
 }
