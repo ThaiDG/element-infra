@@ -12,7 +12,7 @@ data "terraform_remote_state" "vpc" {
     key                  = "terraform.tfstate"
     workspace_key_prefix = "vpc"
     region               = "ap-southeast-1"
-    dynamodb_table       = "terraform-lock-table"
+    use_lockfile         = true
     encrypt              = true
   }
 }
@@ -25,7 +25,7 @@ data "terraform_remote_state" "database" {
     key                  = "terraform.tfstate"
     workspace_key_prefix = "database"
     region               = "ap-southeast-1"
-    dynamodb_table       = "terraform-lock-table"
+    use_lockfile         = true
     encrypt              = true
   }
 }

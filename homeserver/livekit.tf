@@ -1,13 +1,11 @@
-data "template_file" "livekit_server" {
-  template = file("${path.module}/scripts/livekit_server_setup.tpl.sh")
-
-  vars = {
-    redis_endpoint = "${aws_elasticache_serverless_cache.livekit.endpoint[0].address}"
-    redis_port     = "${aws_elasticache_serverless_cache.livekit.endpoint[0].port}"
-    root_domain    = "${var.root_domain}"
-    synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
-    region         = "${data.aws_region.current.region}"
-  }
+locals {
+  livekit_server = templatefile("${path.module}/scripts/livekit_server_setup.tpl.sh", {
+    redis_endpoint = aws_elasticache_serverless_cache.livekit.endpoint[0].address
+    redis_port     = aws_elasticache_serverless_cache.livekit.endpoint[0].port
+    root_domain    = var.root_domain
+    synapse_dns    = module.synapse_route53_record.record_dns_name
+    region         = data.aws_region.current.region
+  })
 }
 
 module "livekit_lt" {
@@ -15,7 +13,7 @@ module "livekit_lt" {
   name_prefix   = "${var.workspace}-livekit-server-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
-  user_data     = data.template_file.livekit_server.rendered
+  user_data     = local.livekit_server
   instance_name = "${var.workspace}-livekit-server"
   volume_size   = 30
   security_group_ids = [
@@ -25,7 +23,7 @@ module "livekit_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.livekit_server.rendered)
+    UserDataHash = md5(local.livekit_server)
   }
 }
 

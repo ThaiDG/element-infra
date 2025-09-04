@@ -1,17 +1,16 @@
-data "template_file" "certbot_init" {
-  template = file("${path.module}/scripts/init-certbot.tpl.sh")
 
-  vars = {
+locals {
+  certbot_init = templatefile("${path.module}/scripts/init-certbot.tpl.sh", {
     region = data.aws_region.current.region
-    domain = "${var.root_domain}" # Wildcard domain for certbot
-  }
+    domain = var.root_domain
+  })
 }
 
 module "certbot_manager_lt" {
   source        = "./modules/EC2/LaunchTemplate"
   name_prefix   = "${var.workspace}-certbot-manager-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
-  user_data     = data.template_file.certbot_init.rendered
+  user_data     = local.certbot_init
   instance_name = "${var.workspace}-certbot-manager"
   volume_size   = 16
   security_group_ids = [
@@ -20,7 +19,7 @@ module "certbot_manager_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.certbot_init.rendered)
+    UserDataHash = md5(local.certbot_init)
   }
 }
 

@@ -1,22 +1,21 @@
-data "template_file" "synapse_init" {
-  template = file("${path.module}/scripts/synapse_server_setup.tpl.sh")
 
-  vars = {
-    synapse_dns      = "${module.synapse_route53_record.record_dns_name}"
-    coturn_tcp_dns   = "${module.coturn_tcp_route53_record.record_dns_name}"
-    coturn_udp_dns   = "${module.coturn_udp_route53_record.record_dns_name}"
-    tapyoush_dns     = "${module.web_tapyoush_route53_record.record_dns_name}"
-    sygnal_dns       = "${module.sygnal_route53_record.record_dns_name}"
-    aws_account_id   = "${data.aws_caller_identity.current.account_id}"
-    aws_region       = "${data.aws_region.current.region}"
-    postgres_dns     = "${data.terraform_remote_state.database.outputs.database_dns}"
+locals {
+  synapse_init = templatefile("${path.module}/scripts/synapse_server_setup.tpl.sh", {
+    synapse_dns      = module.synapse_route53_record.record_dns_name
+    coturn_tcp_dns   = module.coturn_tcp_route53_record.record_dns_name
+    coturn_udp_dns   = module.coturn_udp_route53_record.record_dns_name
+    tapyoush_dns     = module.web_tapyoush_route53_record.record_dns_name
+    sygnal_dns       = module.sygnal_route53_record.record_dns_name
+    aws_account_id   = data.aws_caller_identity.current.account_id
+    aws_region       = data.aws_region.current.region
+    postgres_dns     = data.terraform_remote_state.database.outputs.database_dns
     synapse_version  = var.workspace == "prod" ? var.synapse_release_version : "latest"
-    s3_bucket_name   = "${aws_s3_bucket.synapse_storage.id}"
-    livekit_dns      = "${module.livekit_route53_record.record_dns_name}"
-    livekit_turn_dns = "${module.livekit_turn_route53_record.record_dns_name}"
+    s3_bucket_name   = aws_s3_bucket.synapse_storage.id
+    livekit_dns      = module.livekit_route53_record.record_dns_name
+    livekit_turn_dns = module.livekit_turn_route53_record.record_dns_name
     mas_dns          = "mas.dev.tapofthink.com"
-    # mas_dns         = "${module.mas_route53_record.record_dns_name}"
-  }
+    # mas_dns         = module.mas_route53_record.record_dns_name
+  })
 }
 
 module "synapse_lt" {
@@ -24,7 +23,7 @@ module "synapse_lt" {
   name_prefix   = "${var.workspace}-synapse-web-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
-  user_data     = data.template_file.synapse_init.rendered
+  user_data     = local.synapse_init
   instance_name = "${var.workspace}-synapse-web"
   volume_size   = 30
   security_group_ids = [
@@ -34,7 +33,7 @@ module "synapse_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.synapse_init.rendered)
+    UserDataHash = md5(local.synapse_init)
   }
 }
 

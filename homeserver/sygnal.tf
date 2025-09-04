@@ -1,11 +1,10 @@
-data "template_file" "sygnal_init" {
-  template = file("${path.module}/scripts/sygnal_service_setup.tpl.sh")
 
-  vars = {
-    aws_account_id = "${data.aws_caller_identity.current.account_id}"
-    aws_region     = "${data.aws_region.current.region}"
+locals {
+  sygnal_init = templatefile("${path.module}/scripts/sygnal_service_setup.tpl.sh", {
+    aws_account_id = data.aws_caller_identity.current.account_id
+    aws_region     = data.aws_region.current.region
     log_level      = var.workspace == "prod" ? "INFO" : "DEBUG"
-  }
+  })
 }
 
 module "sygnal_lt" {
@@ -13,7 +12,7 @@ module "sygnal_lt" {
   name_prefix   = "${var.workspace}-sygnal-service-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.small"
-  user_data     = data.template_file.sygnal_init.rendered
+  user_data     = local.sygnal_init
   instance_name = "${var.workspace}-sygnal-service"
   volume_size   = 16
   security_group_ids = [
@@ -22,7 +21,7 @@ module "sygnal_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.sygnal_init.rendered)
+    UserDataHash = md5(local.sygnal_init)
   }
 }
 

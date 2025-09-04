@@ -18,15 +18,14 @@ resource "aws_lb" "coturn_nlb_udp" {
   ]
 }
 
-data "template_file" "coturn_init" {
-  template = file("${path.module}/scripts/coturn_server_setup.tpl.sh")
 
-  vars = {
+locals {
+  coturn_init = templatefile("${path.module}/scripts/coturn_server_setup.tpl.sh", {
     tcp_nlb_dns = aws_lb.coturn_nlb_tcp.dns_name
     udp_nlb_dns = aws_lb.coturn_nlb_udp.dns_name
     region      = data.aws_region.current.region
     root_domain = var.root_domain
-  }
+  })
 }
 
 module "coturn_lt" {
@@ -34,7 +33,7 @@ module "coturn_lt" {
   name_prefix   = "${var.workspace}-coturn-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
-  user_data     = data.template_file.coturn_init.rendered
+  user_data     = local.coturn_init
   instance_name = "${var.workspace}-coturn"
   volume_size   = 16
   security_group_ids = [
@@ -43,7 +42,7 @@ module "coturn_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.coturn_init.rendered)
+    UserDataHash = md5(local.coturn_init)
   }
 }
 

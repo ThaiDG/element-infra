@@ -1,14 +1,13 @@
-data "template_file" "element_init" {
-  template = file("${path.module}/scripts/element_web_setup.tpl.sh")
 
-  vars = {
-    synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
-    tapyoush_dns   = "${module.web_tapyoush_route53_record.record_dns_name}"
-    youshtap_dns   = "${module.web_youshtap_route53_record.record_dns_name}"
-    aws_account_id = "${data.aws_caller_identity.current.account_id}"
-    aws_region     = "${data.aws_region.current.region}"
+locals {
+  element_init = templatefile("${path.module}/scripts/element_web_setup.tpl.sh", {
+    synapse_dns    = module.synapse_route53_record.record_dns_name
+    tapyoush_dns   = module.web_tapyoush_route53_record.record_dns_name
+    youshtap_dns   = module.web_youshtap_route53_record.record_dns_name
+    aws_account_id = data.aws_caller_identity.current.account_id
+    aws_region     = data.aws_region.current.region
     web_version    = var.workspace == "prod" ? var.web_release_version : "latest"
-  }
+  })
 }
 
 module "element_lt" {
@@ -16,7 +15,7 @@ module "element_lt" {
   name_prefix   = "${var.workspace}-element-web-lt"
   image_id      = data.aws_ami.ubuntu_2404.id
   instance_type = "t3.medium"
-  user_data     = data.template_file.element_init.rendered
+  user_data     = local.element_init
   instance_name = "${var.workspace}-element-web"
   volume_size   = 16
   security_group_ids = [
@@ -25,7 +24,7 @@ module "element_lt" {
   ]
 
   tags = {
-    UserDataHash = md5(data.template_file.element_init.rendered)
+    UserDataHash = md5(local.element_init)
   }
 }
 
