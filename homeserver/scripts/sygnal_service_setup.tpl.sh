@@ -130,9 +130,22 @@ mkdir -p prometheus
 
 # Create docker-compose.yaml
 cat <<EOF > docker-compose.yaml
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-verbose-logging: &verbose-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 services:
   sygnal:
     image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/sygnal-service:latest
+    logging: *verbose-logging
     restart: always
     container_name: sygnal
     ports:
@@ -150,6 +163,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    logging: *default-logging
+    restart: always
     ports:
       - "9090:9090"
     volumes:

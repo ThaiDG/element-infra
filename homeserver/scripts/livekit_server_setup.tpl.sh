@@ -151,12 +151,25 @@ EOF
 
 # docker compose
 cat << EOF > $WORK_DIR/docker-compose.yaml
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-verbose-logging: &verbose-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 # This docker-compose requires host networking, which is only available on Linux
 # This compose will not function correctly on Mac or Windows
 services:
   livekit:
     image: livekit/livekit-server:latest
     container_name: livekit
+    logging: *verbose-logging
     network_mode: host
     command: --config /etc/livekit.yaml
     restart: unless-stopped
@@ -166,6 +179,7 @@ services:
   jwt-auth:
     image: ghcr.io/element-hq/lk-jwt-service:latest
     container_name: jwt-auth
+    logging: *verbose-logging
     network_mode: host
     restart: always
     environment:
@@ -177,6 +191,7 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    logging: *default-logging
     network_mode: host
     restart: always
     volumes:
@@ -187,6 +202,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    logging: *default-logging
+    restart: always
     ports:
       - "9090:9090"
     volumes:

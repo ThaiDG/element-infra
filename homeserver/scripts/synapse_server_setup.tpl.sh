@@ -114,11 +114,24 @@ cd "$APP_DIR"
 
 # Create docker-compose.yaml
 cat <<'EOF' > docker-compose.yaml
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-verbose-logging: &verbose-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 services:
   synapse:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:$${SYNAPSE_VERSION}
     container_name: synapse
     restart: always
+    logging: *verbose-logging
     volumes:
       - ./synapse/data:/data
       - ./synapse/config:/config
@@ -131,6 +144,8 @@ services:
   synapse-usage-exporter:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
     container_name: synapse-usage-exporter
+    logging: *default-logging
+    restart: always
     ports:
       - "5000:5000"
     tmpfs:
@@ -142,6 +157,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    logging: *default-logging
+    restart: always
     ports:
       - "9090:9090"
     volumes:
@@ -150,6 +167,7 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    logging: *default-logging
     restart: always
     ports:
       - "80:80"

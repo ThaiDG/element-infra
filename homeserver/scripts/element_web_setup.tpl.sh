@@ -76,10 +76,23 @@ mkdir -p "$APP_DIR" && cd "$APP_DIR"
 # Step 2: Create docker-compose.yaml
 echo "Creating docker-compose.yaml..."
 cat <<EOL > docker-compose.yaml
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-verbose-logging: &verbose-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 services:
   element:
     image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/element-web:$WEB_VERSION
     container_name: element-web
+    logging: *verbose-logging
     restart: always
     ports:
       - "80:80"
@@ -91,6 +104,8 @@ services:
   blackbox:
     image: prom/blackbox-exporter:latest
     container_name: blackbox
+    logging: *default-logging
+    restart: always
     volumes:
       - ./prometheus/blackbox.yaml:/etc/blackbox_exporter/config.yaml
     command:
@@ -99,6 +114,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    logging: *default-logging
+    restart: always
     depends_on:
       - blackbox
     ports:
