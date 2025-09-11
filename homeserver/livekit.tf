@@ -1,11 +1,11 @@
 locals {
-  livekit_server = templatefile("${path.module}/scripts/livekit_server_setup.tpl.sh", {
+  livekit_server = base64gzip(templatefile("${path.module}/scripts/livekit_server_setup.tpl.sh", {
     redis_endpoint = aws_elasticache_serverless_cache.livekit.endpoint[0].address
     redis_port     = aws_elasticache_serverless_cache.livekit.endpoint[0].port
     root_domain    = var.root_domain
     synapse_dns    = module.synapse_route53_record.record_dns_name
     region         = data.aws_region.current.region
-  })
+  }))
 }
 
 module "livekit_lt" {

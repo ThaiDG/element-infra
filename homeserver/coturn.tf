@@ -20,12 +20,12 @@ resource "aws_lb" "coturn_nlb_udp" {
 
 
 locals {
-  coturn_init = templatefile("${path.module}/scripts/coturn_server_setup.tpl.sh", {
+  coturn_init = base64gzip(templatefile("${path.module}/scripts/coturn_server_setup.tpl.sh", {
     tcp_nlb_dns = aws_lb.coturn_nlb_tcp.dns_name
     udp_nlb_dns = aws_lb.coturn_nlb_udp.dns_name
     region      = data.aws_region.current.region
     root_domain = var.root_domain
-  })
+  }))
 }
 
 module "coturn_lt" {

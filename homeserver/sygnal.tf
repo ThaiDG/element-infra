@@ -1,10 +1,10 @@
 
 locals {
-  sygnal_init = templatefile("${path.module}/scripts/sygnal_service_setup.tpl.sh", {
+  sygnal_init = base64gzip(templatefile("${path.module}/scripts/sygnal_service_setup.tpl.sh", {
     aws_account_id = data.aws_caller_identity.current.account_id
     aws_region     = data.aws_region.current.region
     log_level      = var.workspace == "prod" ? "INFO" : "DEBUG"
-  })
+  }))
 }
 
 module "sygnal_lt" {

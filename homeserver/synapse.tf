@@ -1,6 +1,6 @@
 
 locals {
-  synapse_init = templatefile("${path.module}/scripts/synapse_server_setup.tpl.sh", {
+  synapse_init = base64gzip(templatefile("${path.module}/scripts/synapse_server_setup.tpl.sh", {
     synapse_dns      = module.synapse_route53_record.record_dns_name
     coturn_tcp_dns   = module.coturn_tcp_route53_record.record_dns_name
     coturn_udp_dns   = module.coturn_udp_route53_record.record_dns_name
@@ -15,7 +15,7 @@ locals {
     livekit_turn_dns = module.livekit_turn_route53_record.record_dns_name
     mas_dns          = "mas.dev.tapofthink.com"
     # mas_dns         = module.mas_route53_record.record_dns_name
-  })
+  }))
 }
 
 module "synapse_lt" {
