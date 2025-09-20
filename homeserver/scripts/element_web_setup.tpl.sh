@@ -5,6 +5,7 @@ set -e
 SYNAPSE_DNS="${synapse_dns}"
 TAPYOUSH_DNS="${tapyoush_dns}"
 YOUSHTAP_DNS="${youshtap_dns}"
+SYDENT_DNS="${sydent_dns}"
 AWS_ACCOUNT_ID="${aws_account_id}"
 AWS_REGION="${aws_region}"
 WEB_VERSION="${web_version}"
@@ -131,7 +132,6 @@ mkdir -p element/{config,data}
 mkdir -p prometheus
 
 # Step 4: Create config.json
-# Must investigate to create our own identity server instead of using vector.im
 echo "Creating config.$TAPYOUSH_DNS.json..."
 cat <<EOL > element/config.$TAPYOUSH_DNS.json
 {
@@ -141,7 +141,7 @@ cat <<EOL > element/config.$TAPYOUSH_DNS.json
       "server_name": "$SYNAPSE_DNS"
     },
     "m.identity_server": {
-      "base_url": "https://vector.im"
+      "base_url": "https://$SYDENT_DNS"
     }
   },
   "permalink_prefix": "https://$TAPYOUSH_DNS",

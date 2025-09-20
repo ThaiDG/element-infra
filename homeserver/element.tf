@@ -1,12 +1,13 @@
 
 locals {
   element_init = base64gzip(templatefile("${path.module}/scripts/element_web_setup.tpl.sh", {
-    synapse_dns    = module.synapse_route53_record.record_dns_name
-    tapyoush_dns   = module.web_tapyoush_route53_record.record_dns_name
-    youshtap_dns   = module.web_youshtap_route53_record.record_dns_name
-    aws_account_id = data.aws_caller_identity.current.account_id
-    aws_region     = data.aws_region.current.region
-    web_version    = var.workspace == "prod" ? var.web_release_version : "latest"
+    synapse_dns    = "${module.synapse_route53_record.record_dns_name}"
+    tapyoush_dns   = "${module.web_tapyoush_route53_record.record_dns_name}"
+    youshtap_dns   = "${module.web_youshtap_route53_record.record_dns_name}"
+    sydent_dns     = "${module.sydent_route53_record.record_dns_name}"
+    aws_account_id = "${data.aws_caller_identity.current.account_id}"
+    aws_region     = "${data.aws_region.current.region}"
+    web_version    = var.workspace == "prod" ? "${var.web_release_version}" : "latest"
   }))
 }
 
