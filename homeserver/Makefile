@@ -1,5 +1,5 @@
 .PHONY: select-workspace init plan apply destroy \
-	refresh sygnal-refresh synapse-refresh coturn-refresh element-refresh
+	refresh sygnal-refresh synapse-refresh coturn-refresh element-refresh sydent-refresh
 
 # OS detection: windows, macos (darwin), linux
 ifeq ($(OS),)
@@ -129,4 +129,13 @@ else
 	@bash ./refresh-instance.sh -AsgPrefix "livekit-server"
 endif
 
-refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh livekit-refresh
+sydent-refresh:
+ifeq ($(OS),windows)
+	@powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(CURDIR)/refresh-instance.ps1" -AsgPrefix "sydent-server"
+else ifeq ($(OS),macos)
+	@zsh ./refresh-instance.sh -AsgPrefix "sydent-server"
+else
+	@bash ./refresh-instance.sh -AsgPrefix "sydent-server"
+endif
+
+refresh: synapse-refresh sygnal-refresh coturn-refresh element-refresh livekit-refresh sydent-refresh
