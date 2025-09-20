@@ -405,6 +405,55 @@ module "livekit_alb_sg" {
   ]
 }
 
+# ---------------- SYDENT SECURITY GROUPS ----------------
+module "sydent_sg" {
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-sydent-security-group"
+  security_group_description = "Security group for Matrix Identity Server"
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+  ingress_rules = [
+    {
+      description = "Allow traffic for Sydent service port 80"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.sydent_alb_sg.security_group_id}" # Allow traffic from Sydent's ALB security group
+      ]
+    },
+    {
+      description = "Allow traffic for Prometheus metrics"
+      from_port   = 9090
+      to_port     = 9090
+      protocol    = "tcp"
+      cidr_blocks = ["${data.terraform_remote_state.vpc.outputs.vpc_cidr}"]
+      security_groups = [
+        "${module.sydent_alb_sg.security_group_id}" # Allow traffic from Sydent's ALB security group
+      ]
+    }
+  ]
+}
+
+module "sydent_alb_sg" {
+  source                     = "./modules/EC2/SecurityGroup"
+  security_group_name_prefix = "${var.workspace}-sydent-alb-security-group"
+  security_group_description = "Security group for Sydent ALB"
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+
+  ingress_rules = [
+    {
+      description = "Allow HTTPS traffic for Sydent ALB"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      security_groups = []
+    }
+  ]
+}
+
 # ---------------- MAS SERVER SECURITY GROUP ----------------
 # module "mas_sg" {
 #   source                     = "./modules/EC2/SecurityGroup"
