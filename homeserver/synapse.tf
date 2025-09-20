@@ -13,6 +13,7 @@ locals {
     s3_bucket_name   = aws_s3_bucket.synapse_storage.id
     livekit_dns      = module.livekit_route53_record.record_dns_name
     livekit_turn_dns = module.livekit_turn_route53_record.record_dns_name
+    sydent_dns       = "${module.sydent_route53_record.record_dns_name}"
     mas_dns          = "mas.dev.tapofthink.com"
     # mas_dns         = module.mas_route53_record.record_dns_name
   }))

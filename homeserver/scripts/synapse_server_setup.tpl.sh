@@ -15,14 +15,12 @@ S3_BUCKET_NAME="${s3_bucket_name}"
 LIVEKIT_DNS="${livekit_dns}"
 LIVEKIT_TURN_DNS="${livekit_turn_dns}"
 MAS_DNS="${mas_dns}"
+SYDENT_DNS="${sydent_dns}"
 
 # Define constants
 APP_DIR="/app"
 POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
 MAX_BODY_SIZE="500M"
-
-# Update and upgrade the system
-apt-get update && apt-get upgrade -y
 
 # Set up UFW rules
 ufw allow 22/tcp
@@ -33,7 +31,7 @@ ufw allow 9090  # Prometheus port
 ufw --force enable
 
 # Install Docker
-apt-get install -y \
+apt-get update && apt-get install -y \
   docker.io \
   unzip \
   curl \
@@ -308,7 +306,7 @@ turn_user_lifetime: 86400
 turn_allow_guests: false
 
 public_baseurl: "https://$SYNAPSE_DNS"
-# default_identity_server: "https://$MAS_DNS"
+default_identity_server: "https://$SYDENT_DNS"
 web_client_location: "https://$TAPYOUSH_DNS"
 
 # Push notifications to Sygnal
@@ -324,10 +322,23 @@ recaptcha_public_key: "$RECAPTCHA_PUBLIC_KEY"
 recaptcha_private_key: "$RECAPTCHA_PRIVATE_KEY"
 recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
 
-# Enable email verification
-disable_msisdn_registration: true
-# Allows people to change their email address
+# Enable SMS verification for registration
+registrations_require_3pid:
+  - msisdn
+
+# Allow phone number changes
 enable_3pid_changes: true
+
+disable_msisdn_registration: false
+enable_3pid_lookup: true
+
+# Configure MSISDN validation
+account_threepid_delegates:
+  msisdn: https://$SYDENT_DNS
+
+# Trusted identity servers for 3PID lookups
+trusted_third_party_id_servers:
+  - $SYDENT_DNS
 
 # Allows searching of all users in directory
 user_directory:
