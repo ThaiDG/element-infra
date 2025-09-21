@@ -354,7 +354,7 @@ trusted_third_party_id_servers:
 
 # App Service config file for PSTN Bridge
 app_service_config_files:
-  - $APP_DIR/synapse/data/pstn-appservice.yaml
+  - /data/pstn-appservice.yaml
 
 # Allows searching of all users in directory
 user_directory:
