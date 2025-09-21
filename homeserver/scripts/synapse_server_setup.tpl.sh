@@ -139,6 +139,17 @@ services:
       timeout: 10s
       retries: 5
 
+  pstn-bridge:
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/pstn-bridge:latest
+    container_name: pstn-bridge
+    logging: *verbose-logging
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      - PSTN_IDENTITY_SERVER=https://$${SYDENT_DNS}
+      - PSTN_LOG_LEVEL=DEBUG
+
   synapse-usage-exporter:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
     container_name: synapse-usage-exporter
@@ -186,6 +197,7 @@ AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
 AWS_REGION=$AWS_REGION
 SYNAPSE_VERSION=$SYNAPSE_VERSION
 SYNAPSE_DNS=$SYNAPSE_DNS
+SYDENT_DNS=$SYDENT_DNS
 EOF
 
 # Create synapse and postgres folders
@@ -339,6 +351,10 @@ account_threepid_delegates:
 # Trusted identity servers for 3PID lookups
 trusted_third_party_id_servers:
   - $SYDENT_DNS
+
+# App Service config file for PSTN Bridge
+app_service_config_files:
+  - $APP_DIR/synapse/data/pstn-appservice.yaml
 
 # Allows searching of all users in directory
 user_directory:
@@ -545,6 +561,44 @@ else
   echo "✅ s3fs mounted $S3_BUCKET_NAME -> $APP_DIR/synapse/data/media_store"
 fi
 # ──────────────────────────────────────────────────────────────────────────
+
+# Generate a random AS_TOKEN for Application Service
+AS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
+echo "Generated AS_TOKEN: $AS_TOKEN"
+# Generate a random HS_TOKEN for Application Service
+HS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
+echo "Generated HS_TOKEN: $HS_TOKEN"
+
+# Application Service config file for PSTN
+cat <<EOF > "$APP_DIR/synapse/data/pstn-appservice.yaml"
+# Application Service Registration for PSTN Bridge
+# This file should be placed in your Synapse configuration directory
+# and referenced in homeserver.yaml's app_service_config_files
+
+id: pstn_bridge
+url: http://localhost:8090
+as_token: "$AS_TOKEN"
+hs_token: "$HS_TOKEN"
+sender_localpart: pstn_bot
+
+# Namespace configuration
+namespaces:
+  users: []  # We don't claim any user namespaces
+  aliases: []  # We don't claim any alias namespaces
+  rooms: []   # We don't claim any room namespaces
+
+# Protocol support
+protocols:
+  - "m.protocol.pstn"
+
+# Rate limiting (optional)
+rate_limited: false
+
+# Push ephemeral events to the AS (optional)
+push_ephemeral: false
+
+
+EOF
 
 # Start services
 echo "Starting Synapse and related services..."
