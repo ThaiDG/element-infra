@@ -576,7 +576,7 @@ cat <<EOF > "$APP_DIR/synapse/data/pstn-appservice.yaml"
 # and referenced in homeserver.yaml's app_service_config_files
 
 id: pstn_bridge
-url: http://localhost:8090
+url: http://pstn-bridge:8090
 as_token: "$AS_TOKEN"
 hs_token: "$HS_TOKEN"
 sender_localpart: pstn_bot
