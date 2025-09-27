@@ -16,11 +16,16 @@ LIVEKIT_DNS="${livekit_dns}"
 LIVEKIT_TURN_DNS="${livekit_turn_dns}"
 MAS_DNS="${mas_dns}"
 SYDENT_DNS="${sydent_dns}"
+ENVIRONMENT="${environment}"
 
 # Define constants
 APP_DIR="/app"
 POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
 MAX_BODY_SIZE="500M"
+LOG_LEVEL="DEBUG"
+if [ "$ENVIRONMENT" == "prod" ]; then
+  LOG_LEVEL="INFO"
+fi
 
 # Set up UFW rules
 ufw allow 22/tcp
@@ -168,7 +173,7 @@ services:
     tmpfs:
       - /tmp/prometheus
     environment:
-      - APP_LOG_LEVEL=DEBUG
+      - APP_LOG_LEVEL=$${LOG_LEVEL}
       - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
 
   prometheus:
@@ -206,6 +211,7 @@ AWS_REGION=$AWS_REGION
 SYNAPSE_VERSION=$SYNAPSE_VERSION
 SYNAPSE_DNS=$SYNAPSE_DNS
 SYDENT_DNS=$SYDENT_DNS
+LOG_LEVEL=$LOG_LEVEL
 EOF
 
 # Create synapse and postgres folders
