@@ -254,7 +254,7 @@ docker run --rm \
   -v "$APP_DIR/synapse/config:/config" \
   -e SYNAPSE_SERVER_NAME=$SYNAPSE_DNS \
   -e SYNAPSE_REPORT_STATS=no \
-  matrixdotorg/synapse generate
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/element/synapse-server:$SYNAPSE_VERSION generate
 
 CONFIG_FILE="$APP_DIR/synapse/data/homeserver.yaml"
 
