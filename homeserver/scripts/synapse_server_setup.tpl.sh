@@ -265,17 +265,6 @@ FORM_SECRET=$(grep 'form_secret:' "$CONFIG_FILE" | sed 's/.*form_secret:[[:space
 
 # Overwrite homeserver.yaml with complete config
 cat <<EOF > "$CONFIG_FILE"
-# Configuration file for Synapse.
-#
-# This is a YAML file: see [1] for a quick introduction. Note in particular
-# that *indentation is important*: all the elements of a list or dictionary
-# should have the same indentation.
-#
-# [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
-#
-# For more information on how to configure Synapse, including a complete accounting of
-# each option, go to docs/usage/configuration/config_documentation.md or
-# https://element-hq.github.io/synapse/latest/usage/configuration/config_documentation.html
 server_name: "$SYNAPSE_DNS"
 pid_file: /data/homeserver.pid
 listeners:
