@@ -138,6 +138,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    depends_on:
+      pstn-bridge:
+        condition: service_healthy
 
   pstn-bridge:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/pstn-bridge:latest
@@ -148,7 +151,12 @@ services:
       - "8090:8090"
     environment:
       - PSTN_IDENTITY_SERVER=https://$${SYDENT_DNS}
-      - PSTN_LOG_LEVEL=DEBUG
+      - PSTN_LOG_LEVEL=$${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8090/health\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   synapse-usage-exporter:
     image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
