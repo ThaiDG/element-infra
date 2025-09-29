@@ -22,9 +22,12 @@ ENVIRONMENT="${environment}"
 APP_DIR="/app"
 POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
 MAX_BODY_SIZE="500M"
+# Default value for nonprod environment
 LOG_LEVEL="DEBUG"
+DISABLED_MSISDN_REGISTRATION="true"
 if [ "$ENVIRONMENT" == "prod" ]; then
   LOG_LEVEL="INFO"
+  DISABLED_MSISDN_REGISTRATION="false"
 fi
 
 # Set up UFW rules
@@ -344,7 +347,7 @@ registrations_require_3pid:
 # Allow phone number changes
 enable_3pid_changes: true
 
-disable_msisdn_registration: false
+disable_msisdn_registration: $DISABLED_MSISDN_REGISTRATION
 enable_3pid_lookup: true
 
 # Configure MSISDN validation
