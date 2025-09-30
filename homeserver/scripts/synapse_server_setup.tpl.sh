@@ -316,9 +316,9 @@ max_upload_size: $MAX_BODY_SIZE
 
 # Enable TURN server
 turn_uris:
-  # - "turn:$COTURN_UDP_DNS:3478?transport=udp"
-  # - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
-  - "turns:$LIVEKIT_TURN_DNS:5349?transport=tcp"
+  - "turn:$COTURN_UDP_DNS:3478?transport=udp"
+  - "turn:$COTURN_TCP_DNS:3478?transport=tcp"
+  - "turns:$COTURN_TCP_DNS:5349?transport=tcp"
 turn_shared_secret: "$COTURN_SECRET"
 turn_user_lifetime: 86400
 turn_allow_guests: false
