@@ -232,6 +232,21 @@ log:
         handlers: ["stderr", "stdout"]
         level: "$LOG_LEVEL"
 
+      sygnal.apnspushkin:
+        propagate: true
+        handlers: ["stderr", "stdout"]
+        level: "$LOG_LEVEL"
+
+      aioapns:
+        propagate: true
+        handlers: ["stderr", "stdout"]
+        level: "$LOG_LEVEL"
+
+      aioapns.connection:
+        propagate: true
+        handlers: ["stderr", "stdout"]
+        level: "$LOG_LEVEL"
+
     root:
       # Specify the handler(s) to send log messages to.
       handlers: ["stderr", "stdout"]
