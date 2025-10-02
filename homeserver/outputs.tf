@@ -28,12 +28,13 @@ output "synapse_sg_id" {
   value       = module.synapse_sg.security_group_id
 }
 
-output "redis_endpoint" {
-  description = "Endpoint address for LiveKit Redis (Valkey Serverless)"
-  value       = aws_elasticache_serverless_cache.livekit.endpoint[0].address
-}
+# LIVEKIT OUTPUTS (DISABLED)
+# output "redis_endpoint" {
+#   description = "Endpoint address for LiveKit Redis (Valkey Serverless)"
+#   value       = aws_elasticache_serverless_cache.livekit.endpoint[0].address
+# }
 
-output "redis_port" {
-  description = "Port for LiveKit Redis (Valkey Serverless)"
-  value       = aws_elasticache_serverless_cache.livekit.endpoint[0].port
-}
+# output "redis_port" {
+#   description = "Port for LiveKit Redis (Valkey Serverless)"
+#   value       = aws_elasticache_serverless_cache.livekit.endpoint[0].port
+# }
