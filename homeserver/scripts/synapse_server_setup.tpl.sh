@@ -22,12 +22,17 @@ ENVIRONMENT="${environment}"
 APP_DIR="/app"
 POSTGRES_DB="postgres"  # Default Postgres database name for initial setup
 MAX_BODY_SIZE="500M"
+PHONE_LOOKUP_PORT="8091"
+PHONE_LOOKUP_PROTOCOL="m.protocol.phone_lookup"
+ECR_NAMESPACE="element"
 # Default value for nonprod environment
 LOG_LEVEL="DEBUG"
 DISABLED_MSISDN_REGISTRATION="true"
+PHONE_LOOKUP_VERBOSE="true"
 if [ "$ENVIRONMENT" == "prod" ]; then
   LOG_LEVEL="INFO"
   DISABLED_MSISDN_REGISTRATION="false"
+  PHONE_LOOKUP_VERBOSE="false"
 fi
 
 # Set up UFW rules
@@ -134,7 +139,7 @@ x-verbose-logging: &verbose-logging
 
 services:
   synapse:
-    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-server:$${SYNAPSE_VERSION}
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/$${ECR_NAMESPACE}/synapse-server:$${SYNAPSE_VERSION}
     container_name: synapse
     restart: always
     logging: *verbose-logging
@@ -149,11 +154,13 @@ services:
     depends_on:
       pstn-bridge:
         condition: service_healthy
+      phone-lookup-bridge:
+        condition: service_healthy
 
   pstn-bridge:
-    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/pstn-bridge:latest
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/$${ECR_NAMESPACE}/pstn-bridge:latest
     container_name: pstn-bridge
-    logging: *verbose-logging
+    logging: *default-logging
     restart: always
     ports:
       - "8090:8090"
@@ -166,8 +173,30 @@ services:
       timeout: 10s
       retries: 5
 
+  phone-lookup-bridge:
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/$${ECR_NAMESPACE}/phone-lookup-bridge:latest
+    container_name: phone-lookup-bridge
+    logging: *verbose-logging
+    restart: always
+    ports:
+      - "$${PHONE_LOOKUP_PORT}:$${PHONE_LOOKUP_PORT}"
+    environment:
+      - PHONE_LOOKUP_HS_BASE=http://synapse:8008
+      - PHONE_LOOKUP_HS_SERVER_NAME=$${SYNAPSE_DNS}
+      - PHONE_LOOKUP_IS_BASE=https://$${SYDENT_DNS}
+      - PHONE_LOOKUP_PORT=$${PHONE_LOOKUP_PORT}
+      - PHONE_LOOKUP_HOST=0.0.0.0
+      - PHONE_LOOKUP_LOG_LEVEL=$${LOG_LEVEL}
+      - PHONE_LOOKUP_VERBOSE=$${PHONE_LOOKUP_VERBOSE}
+      - PHONE_LOOKUP_PROTOCOL=$${PHONE_LOOKUP_PROTOCOL}
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:$${PHONE_LOOKUP_PORT}/health\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   synapse-usage-exporter:
-    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/element/synapse-usage-exporter:latest
+    image: $${AWS_ACCOUNT_ID}.dkr.ecr.$${AWS_REGION}.amazonaws.com/$${ECR_NAMESPACE}/synapse-usage-exporter:latest
     container_name: synapse-usage-exporter
     logging: *default-logging
     restart: always
@@ -211,10 +240,14 @@ POSTGRES_DB=$POSTGRES_DB
 SYNAPSE_DB=$SYNAPSE_DB
 AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
 AWS_REGION=$AWS_REGION
+ECR_NAMESPACE=$ECR_NAMESPACE
 SYNAPSE_VERSION=$SYNAPSE_VERSION
 SYNAPSE_DNS=$SYNAPSE_DNS
 SYDENT_DNS=$SYDENT_DNS
 LOG_LEVEL=$LOG_LEVEL
+PHONE_LOOKUP_PORT=$PHONE_LOOKUP_PORT
+PHONE_LOOKUP_PROTOCOL=$PHONE_LOOKUP_PROTOCOL
+PHONE_LOOKUP_VERBOSE=$PHONE_LOOKUP_VERBOSE
 EOF
 
 # Create synapse and postgres folders
@@ -361,6 +394,7 @@ trusted_third_party_id_servers:
 # App Service config file for PSTN Bridge
 app_service_config_files:
   - /data/pstn-appservice.yaml
+  - /data/phone-lookup-appservice.yaml
 
 # Allows searching of all users in directory
 user_directory:
@@ -568,22 +602,18 @@ else
 fi
 # ──────────────────────────────────────────────────────────────────────────
 
-# Generate a random AS_TOKEN for Application Service
-AS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
-echo "Generated AS_TOKEN: $AS_TOKEN"
 # Generate a random HS_TOKEN for Application Service
 HS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
 echo "Generated HS_TOKEN: $HS_TOKEN"
 
+# Generate a random PSTN_AS_TOKEN for PSTN Bridge
+PSTN_AS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
+echo "Generated PSTN_AS_TOKEN: $PSTN_AS_TOKEN"
 # Application Service config file for PSTN
 cat <<EOF > "$APP_DIR/synapse/data/pstn-appservice.yaml"
-# Application Service Registration for PSTN Bridge
-# This file should be placed in your Synapse configuration directory
-# and referenced in homeserver.yaml's app_service_config_files
-
 id: pstn_bridge
 url: http://pstn-bridge:8090
-as_token: "$AS_TOKEN"
+as_token: "$PSTN_AS_TOKEN"
 hs_token: "$HS_TOKEN"
 sender_localpart: pstn_bot
 
@@ -596,6 +626,36 @@ namespaces:
 # Protocol support
 protocols:
   - "m.protocol.pstn"
+
+# Rate limiting (optional)
+rate_limited: false
+
+# Push ephemeral events to the AS (optional)
+push_ephemeral: false
+
+
+EOF
+
+# Generate a random PHONE_LOOKUP_AS_TOKEN for Phone Lookup Bridge
+PHONE_LOOKUP_AS_TOKEN=$(openssl rand -base64 32 | tr -d '=+/')
+echo "Generated PHONE_LOOKUP_AS_TOKEN: $PHONE_LOOKUP_AS_TOKEN"
+# Application Service config file for Phone Lookup
+cat <<EOF > "$APP_DIR/synapse/data/phone-lookup-appservice.yaml"
+id: phone_lookup_bridge
+url: http://phone-lookup-bridge:$PHONE_LOOKUP_PORT
+as_token: "$PHONE_LOOKUP_AS_TOKEN"
+hs_token: "$HS_TOKEN"
+sender_localpart: phone_lookup_bot
+
+# Namespace configuration
+namespaces:
+  users: []  # We don't claim any user namespaces
+  aliases: []  # We don't claim any alias namespaces
+  rooms: []   # We don't claim any room namespaces
+
+# Protocol support
+protocols:
+  - "$PHONE_LOOKUP_PROTOCOL"
 
 # Rate limiting (optional)
 rate_limited: false
